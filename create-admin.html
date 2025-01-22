@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Admin</title>
+    <style>
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <button onclick="createAdmin()">Create Admin User</button>
+    <div id="message"></div>
+
+    <script>
+        async function createAdmin() {
+            try {
+                const response = await fetch('http://localhost:5506/api/create-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                const messageDiv = document.getElementById('message');
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Admin created successfully! Use email: admin@example.com and password: admin123';
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = data.error || 'Failed to create admin';
+                }
+            } catch (error) {
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Error creating admin: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

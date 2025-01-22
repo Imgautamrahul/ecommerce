@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Your Store</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shopping-bag text-3xl"></i>
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" onclick="showDashboard()">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showProducts()">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showVendors()">
+                    <i class="fas fa-store"></i>
+                    <span>Vendors</span>
+                    <span class="badge" id="vendorRequestCount">0</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showOrders()">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="#" class="nav-item" onclick="showUsers()">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" onclick="logout()" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search...">
+                </div>
+                <div class="top-bar-right">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <div class="admin-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Admin">
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card" data-stat="orders">
+                        <div class="stat-icon" style="background: rgba(79, 70, 229, 0.1);">
+                            <i class="fas fa-shopping-cart text-indigo-600"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Orders</h3>
+                            <p class="stat-value">Loading...</p>
+                            <span class="stat-change positive">+12.5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-stat="revenue">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1);">
+                            <i class="fas fa-dollar-sign text-green-600"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Revenue</h3>
+                            <p class="stat-value">Loading...</p>
+                            <span class="stat-change positive">+8.3%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-stat="users">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1);">
+                            <i class="fas fa-users text-yellow-600"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Customers</h3>
+                            <p class="stat-value">Loading...</p>
+                            <span class="stat-change positive">+5.2%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-stat="products">
+                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1);">
+                            <i class="fas fa-box text-red-600"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Products</h3>
+                            <p class="stat-value">Loading...</p>
+                            <span class="stat-change negative">-2.1%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add this after the stats grid -->
+                <div class="refresh-section">
+                    <button id="refreshStats" class="refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Refresh Stats
+                    </button>
+                    <span id="lastRefresh" class="last-refresh">Last updated: Never</span>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h2>Recent Orders</h2>
+                        <button class="view-all-btn">View All</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Product</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Sample order rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Customer Section -->
+                <div id="customersSection" style="display: none;">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Customer List</h2>
+                            <div class="header-actions">
+                                <div class="search-wrapper">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="customerSearch" placeholder="Search customers..." class="search-input">
+                                </div>
+                                <button class="refresh-btn" onclick="showCustomers()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Address</th>
+                                        <th>Join Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customersList">
+                                    <!-- Customer data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add this after the customers section -->
+                <div id="productsSection" style="display: none;">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Product List</h2>
+                            <div class="header-actions">
+                                <div class="search-wrapper">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="productSearch" placeholder="Search products..." class="search-input">
+                                </div>
+                                <button class="add-product-btn" onclick="showAddProductModal()">
+                                    <i class="fas fa-plus"></i> Add Product
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsList">
+                                    <!-- Products will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Add Product Modal -->
+                    <div id="addProductModal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h2>Add New Product</h2>
+                                <button class="close-btn" onclick="closeAddProductModal()">×</button>
+                            </div>
+                            <form id="addProductForm" onsubmit="handleAddProduct(event)">
+                                <div class="form-group">
+                                    <label for="productName">Product Name</label>
+                                    <input type="text" id="productName" name="name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="productCategory">Category</label>
+                                    <select id="productCategory" name="category" required>
+                                        <option value="">Select Category</option>
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Clothing">Clothing</option>
+                                        <option value="Books">Books</option>
+                                        <option value="Home">Home & Living</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="productPrice">Price (₹)</label>
+                                    <input type="number" id="productPrice" name="price" min="0" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="productStock">Stock Quantity</label>
+                                    <input type="number" id="productStock" name="stock" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="productDescription">Description</label>
+                                    <textarea id="productDescription" name="description" rows="4" required></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="productImage">Product Image URL</label>
+                                    <input type="url" id="productImage" name="image" required>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="cancel-btn" onclick="closeAddProductModal()">Cancel</button>
+                                    <button type="submit" class="submit-btn">Add Product</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Section -->
+                <div id="vendorsSection" class="content-section" style="display: none;">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Vendor Management</h2>
+                            <div class="header-actions">
+                                <div class="search-wrapper">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="vendorSearch" placeholder="Search vendors..." onkeyup="searchVendors()" class="search-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Business Name</th>
+                                        <th>Owner</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Category</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendorsList">
+                                    <!-- Vendors will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Orders Section -->
+                <div id="vendorOrdersSection" class="content-section" style="display: none;">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <div class="header-title">
+                                <button class="back-btn" onclick="showVendors()">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <h2>Vendor Orders - <span id="vendorBusinessName"></span></h2>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Products</th>
+                                        <th>Total Amount</th>
+                                        <th>Status</th>
+                                        <th>Order Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendorOrdersList">
+                                    <!-- Vendor orders will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vendor Details Modal -->
+                <div id="vendorDetailsModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Vendor Details</h2>
+                            <button class="close-btn" onclick="closeVendorModal()">&times;</button>
+                        </div>
+                        <div class="modal-body" id="vendorDetailsContent">
+                            <div class="vendor-info-grid">
+                                <div class="info-group">
+                                    <h3>Business Information</h3>
+                                    <p><strong>Business Name:</strong> <span id="vBusinessName"></span></p>
+                                    <p><strong>Category:</strong> <span id="vCategory"></span></p>
+                                    <p><strong>Description:</strong> <span id="vDescription"></span></p>
+                                </div>
+                                <div class="info-group">
+                                    <h3>Contact Information</h3>
+                                    <p><strong>Owner Name:</strong> <span id="vOwnerName"></span></p>
+                                    <p><strong>Email:</strong> <span id="vEmail"></span></p>
+                                    <p><strong>Phone:</strong> <span id="vPhone"></span></p>
+                                </div>
+                                <div class="info-group">
+                                    <h3>Business Address</h3>
+                                    <p><strong>Street:</strong> <span id="vStreet"></span></p>
+                                    <p><strong>City:</strong> <span id="vCity"></span></p>
+                                    <p><strong>State:</strong> <span id="vState"></span></p>
+                                    <p><strong>Postal Code:</strong> <span id="vPostalCode"></span></p>
+                                </div>
+                                <div class="info-group">
+                                    <h3>Performance Metrics</h3>
+                                    <p><strong>Total Products:</strong> <span id="vTotalProducts"></span></p>
+                                    <p><strong>Total Orders:</strong> <span id="vTotalOrders"></span></p>
+                                    <p><strong>Rating:</strong> <span id="vRating"></span></p>
+                                    <p><strong>Member Since:</strong> <span id="vMemberSince"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="admin-dashboard.js"></script>
+    <script>
+        // Check for admin authentication
+        const adminToken = localStorage.getItem('adminToken');
+        const adminAuth = localStorage.getItem('adminAuth');
+        
+        if (!adminToken || !adminAuth) {
+            window.location.href = 'profile.html';
+        }
+
+        // Add notification function
+        function showNotification(message, type = 'error') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Fetch and display vendors
+        async function fetchVendors() {
+            try {
+                const response = await fetch('http://localhost:5506/api/admin/vendors', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Oops, we haven't got JSON!");
+                }
+                
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch vendors');
+                }
+                
+                renderVendors(data.vendors);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Render vendors table
+        function renderVendors(vendors) {
+            const vendorsList = document.getElementById('vendorsList');
+            if (!vendors || vendors.length === 0) {
+                vendorsList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No vendors found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            vendorsList.innerHTML = vendors.map(vendor => {
+                const ownerName = vendor.userId?.name || 'N/A';
+                const businessName = vendor.businessName || 'N/A';
+                const email = vendor.businessEmail || vendor.userId?.email || 'N/A';
+                const phone = vendor.businessPhone || 'N/A';
+                const category = vendor.businessCategory || 'N/A';
+
+                return `
+                    <tr>
+                        <td>${businessName}</td>
+                        <td>${ownerName}</td>
+                        <td>${email}</td>
+                        <td>${phone}</td>
+                        <td>${category}</td>
+                        <td>
+                            <button class="action-btn view" onclick="viewVendorDetails('${vendor._id}')" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn view" onclick="viewVendorOrders('${vendor._id}', '${businessName}')" title="View Orders">
+                                <i class="fas fa-shopping-cart"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Show vendors section
+        function showVendors() {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById('vendorsSection').style.display = 'block';
+            fetchVendors();
+        }
+
+        function searchVendors() {
+            const searchTerm = document.getElementById('vendorSearch').value.toLowerCase();
+            const rows = document.getElementById('vendorsList').getElementsByTagName('tr');
+
+            Array.from(rows).forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        // View vendor details
+        async function viewVendorDetails(vendorId) {
+            try {
+                const response = await fetch(`http://localhost:5506/api/admin/vendors/${vendorId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch vendor details');
+                }
+                
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch vendor details');
+                }
+                
+                displayVendorDetails(data.vendor);
+                document.getElementById('vendorDetailsModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Show vendor details modal
+        function showVendorDetailsModal(vendor) {
+            const modal = document.getElementById('vendorDetailsModal');
+            const content = document.getElementById('vendorDetailsContent');
+            const actionButtons = document.getElementById('vendorActionButtons');
+            
+            content.innerHTML = `
+                <div class="vendor-details">
+                    <h3>Business Information</h3>
+                    <p><strong>Business Name:</strong> ${vendor.businessName}</p>
+                    <p><strong>Category:</strong> ${vendor.businessCategory}</p>
+                    <p><strong>Description:</strong> ${vendor.businessDescription}</p>
+                    
+                    <h3>Contact Information</h3>
+                    <p><strong>Owner Name:</strong> ${vendor.userId?.name || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${vendor.businessEmail}</p>
+                    <p><strong>Phone:</strong> ${vendor.businessPhone}</p>
+                    
+                    <h3>Address</h3>
+                    <p>${vendor.businessAddress.street}</p>
+                    <p>${vendor.businessAddress.city}, ${vendor.businessAddress.state}</p>
+                    <p>${vendor.businessAddress.postalCode}, ${vendor.businessAddress.country}</p>
+                    
+                    <h3>Status Information</h3>
+                    <p><strong>Current Status:</strong> <span class="status-badge ${vendor.status}">${vendor.status}</span></p>
+                    <p><strong>Registration Date:</strong> ${new Date(vendor.createdAt).toLocaleDateString()}</p>
+                </div>
+            `;
+
+            if (vendor.status === 'pending') {
+                actionButtons.innerHTML = `
+                    <button class="action-btn approve" onclick="handleVendorAction('${vendor._id}', 'approve')">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button class="action-btn reject" onclick="handleVendorAction('${vendor._id}', 'reject')">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                `;
+            } else {
+                actionButtons.innerHTML = '';
+            }
+
+            modal.style.display = 'block';
+        }
+
+        // Handle vendor action (approve/reject)
+        async function handleVendorAction(vendorId, action) {
+            try {
+                const response = await fetch(`http://localhost:5506/api/admin/vendors/${vendorId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`Failed to ${action} vendor`);
+                
+                showNotification(`Vendor ${action}ed successfully`, 'success');
+                closeVendorDetailsModal();
+                fetchVendors();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(`Failed to ${action} vendor`, 'error');
+            }
+        }
+
+        // Close vendor details modal
+        function closeVendorDetailsModal() {
+            document.getElementById('vendorDetailsModal').style.display = 'none';
+        }
+
+        function displayVendorDetails(vendor) {
+            // Business Information
+            document.getElementById('vBusinessName').textContent = vendor.businessName;
+            document.getElementById('vCategory').textContent = vendor.businessCategory;
+            document.getElementById('vDescription').textContent = vendor.businessDescription;
+
+            // Contact Information
+            document.getElementById('vOwnerName').textContent = vendor.userId.name;
+            document.getElementById('vEmail').textContent = vendor.businessEmail;
+            document.getElementById('vPhone').textContent = vendor.businessPhone;
+
+            // Address
+            document.getElementById('vStreet').textContent = vendor.businessAddress.street;
+            document.getElementById('vCity').textContent = vendor.businessAddress.city;
+            document.getElementById('vState').textContent = vendor.businessAddress.state;
+            document.getElementById('vPostalCode').textContent = vendor.businessAddress.postalCode;
+
+            // Performance Metrics
+            document.getElementById('vTotalProducts').textContent = vendor.products.length;
+            document.getElementById('vRating').textContent = `${vendor.rating.toFixed(1)} ★`;
+            document.getElementById('vMemberSince').textContent = new Date(vendor.createdAt).toLocaleDateString();
+        }
+
+        function closeVendorModal() {
+            document.getElementById('vendorDetailsModal').style.display = 'none';
+        }
+
+        // View vendor orders
+        async function viewVendorOrders(vendorId, businessName) {
+            try {
+                const response = await fetch(`http://localhost:5506/api/admin/vendor-orders/${vendorId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch vendor orders');
+                }
+                
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch vendor orders');
+                }
+                
+                document.getElementById('vendorBusinessName').textContent = businessName;
+                renderVendorOrders(data.orders);
+                
+                document.getElementById('vendorsSection').style.display = 'none';
+                document.getElementById('vendorOrdersSection').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Render vendor orders
+        function renderVendorOrders(orders) {
+            const ordersList = document.getElementById('vendorOrdersList');
+            if (!orders || orders.length === 0) {
+                ordersList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No orders found for this vendor</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            ordersList.innerHTML = orders.map(order => `
+                <tr>
+                    <td>${order._id}</td>
+                    <td>${order.userId.name}</td>
+                    <td>${order.products.length} items</td>
+                    <td>$${order.totalAmount.toFixed(2)}</td>
+                    <td>
+                        <span class="status-badge ${order.status.toLowerCase()}">
+                            ${order.status}
+                        </span>
+                    </td>
+                    <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+
+    <style>
+        .pending-badge {
+            background-color: #f59e0b;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .vendor-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0 1rem;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            color: #6b7280;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #3b82f6;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-badge.pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-badge.approved {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+
+        .status-badge.rejected {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .vendor-details {
+            padding: 1.5rem;
+        }
+
+        .vendor-details h3 {
+            color: #1f2937;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .vendor-details p {
+            margin: 0.5rem 0;
+            color: #4b5563;
+        }
+
+        .vendor-details strong {
+            color: #1f2937;
+        }
+
+        .action-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            margin: 0 0.25rem;
+        }
+
+        .action-btn.view {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .action-btn.approve {
+            background-color: #059669;
+            color: white;
+        }
+
+        .action-btn.reject {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .modal-footer .action-btn {
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vendor-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .info-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .info-group h3 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .info-group p {
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .info-group strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .status-pending {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        .status-suspended {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 10px;
+            margin-right: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-3px);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.success {
+            background: rgba(46, 204, 113, 0.9);
+        }
+
+        .notification.error {
+            background: rgba(231, 76, 60, 0.9);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</body>
+</html> 

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Registration</title>
+    <link rel="stylesheet" href="profile.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Vendor Registration</h2>
+            <form id="vendorRegistrationForm" onsubmit="handleVendorRegistration(event)">
+                <!-- Personal Information -->
+                <div class="section">
+                    <h3>Personal Information</h3>
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="name" placeholder="Full Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" placeholder="Password" required>
+                    </div>
+                </div>
+
+                <!-- Business Information -->
+                <div class="section">
+                    <h3>Business Information</h3>
+                    <div class="input-group">
+                        <i class="fas fa-store"></i>
+                        <input type="text" name="businessName" placeholder="Business Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-info-circle"></i>
+                        <textarea name="businessDescription" placeholder="Business Description" required></textarea>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-tags"></i>
+                        <select name="businessCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Fashion">Fashion</option>
+                            <option value="Home">Home & Living</option>
+                            <option value="Books">Books</option>
+                            <option value="Sports">Sports & Fitness</option>
+                            <option value="Beauty">Beauty & Personal Care</option>
+                            <option value="Food">Food & Beverages</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="section">
+                    <h3>Contact Information</h3>
+                    <div class="input-group">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" name="businessPhone" placeholder="Business Phone" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="businessEmail" placeholder="Business Email" required>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="section">
+                    <h3>Business Address</h3>
+                    <div class="input-group">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <input type="text" name="businessAddress[street]" placeholder="Street Address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-city"></i>
+                        <input type="text" name="businessAddress[city]" placeholder="City" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-map"></i>
+                        <input type="text" name="businessAddress[state]" placeholder="State" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-mail-bulk"></i>
+                        <input type="text" name="businessAddress[postalCode]" placeholder="Postal Code" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-globe"></i>
+                        <input type="text" name="businessAddress[country]" placeholder="Country" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Register as Vendor</button>
+                <p class="text-center">Already registered? <a href="profile.html#signin">Sign In</a></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function handleVendorRegistration(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const data = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                businessName: formData.get('businessName'),
+                businessDescription: formData.get('businessDescription'),
+                businessCategory: formData.get('businessCategory'),
+                businessPhone: formData.get('businessPhone'),
+                businessEmail: formData.get('businessEmail'),
+                businessAddress: {
+                    street: formData.get('businessAddress[street]'),
+                    city: formData.get('businessAddress[city]'),
+                    state: formData.get('businessAddress[state]'),
+                    postalCode: formData.get('businessAddress[postalCode]'),
+                    country: formData.get('businessAddress[country]')
+                }
+            };
+
+            try {
+                const response = await fetch('http://localhost:5506/api/vendor/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Store auth data
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('userRole', result.user.role);
+                    localStorage.setItem('userName', result.user.name);
+                    localStorage.setItem('userEmail', result.user.email);
+                    
+                    showMessage('Registration successful! Redirecting to dashboard...', 'success');
+                    
+                    // Redirect to vendor dashboard after a short delay
+                    setTimeout(() => {
+                        window.location.href = 'vendor-dashboard.html';
+                    }, 1500);
+                } else {
+                    showMessage(result.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showMessage('Connection error. Please try again.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = message;
+            
+            const form = document.getElementById('vendorRegistrationForm');
+            form.insertBefore(messageDiv, form.firstChild);
+
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
+
+        // Auto-check vendor checkbox when redirected from registration
+        if (window.location.hash === '#signin' && localStorage.getItem('vendorEmail')) {
+            const vendorCheckbox = document.getElementById('vendorCheckbox');
+            if (vendorCheckbox) {
+                vendorCheckbox.checked = true;
+                const emailInput = document.querySelector('input[name="email"]');
+                if (emailInput) {
+                    emailInput.value = localStorage.getItem('vendorEmail');
+                }
+            }
+        }
+    </script>
+</body>
+</html> 
