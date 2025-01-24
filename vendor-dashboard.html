@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendor Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
     <style>
         * {
             margin: 0;
@@ -303,23 +304,41 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 1000;
         }
 
         .modal-content {
             position: relative;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(17, 24, 39, 0.95);
             backdrop-filter: blur(10px);
-            margin: 5% auto;
-            padding: 25px;
-            border-radius: 15px;
+            margin: 2% auto;
+            padding: 20px;
+            border-radius: 10px;
             width: 90%;
-            max-width: 600px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            color: white;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #1a1a1a;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa;
         }
 
         .modal-header {
@@ -333,21 +352,31 @@
 
         .modal-header h2 {
             font-size: 24px;
-            color: white;
+            color: #ffffff;
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: white;
-            font-size: 24px;
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
-            padding: 5px;
             transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
         }
 
         .close-btn:hover {
+            color: #3b82f6;
             transform: scale(1.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .form-group {
@@ -356,33 +385,108 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: white;
+            margin-bottom: 5px;
             font-weight: 500;
+            color: #ffffff;
         }
 
-        .form-group input,
+        .form-group input[type="text"],
+        .form-group input[type="number"],
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 10px 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #000000;
+            color: #ffffff;
+            transition: all 0.3s ease;
         }
 
-        .form-group input:focus,
+        .form-group input[type="text"]:hover,
+        .form-group input[type="number"]:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            background-color: #1a1a1a;
+            border-color: #3b82f6;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.5);
+            background-color: #1a1a1a;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .form-group select option {
-            background: #2c3e50;
-            color: white;
+        .form-group .file-upload-container {
+            width: 100%;
+            height: 120px;
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #000000;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .form-group .file-upload-container:hover {
+            border-color: #60a5fa;
+            background-color: #1a1a1a;
+        }
+
+        .form-group .file-upload-container i {
+            font-size: 24px;
+            color: #3b82f6;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group .file-upload-container:hover i {
+            color: #60a5fa;
+            transform: scale(1.1);
+        }
+
+        .form-group .file-upload-container span {
+            color: #ffffff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group .file-upload-container:hover span {
+            color: #60a5fa;
+        }
+
+        .form-group input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .image-preview {
+            margin-top: 15px;
+            max-width: 200px;
+            max-height: 200px;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            background-color: #000000;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .modal-footer {
@@ -402,6 +506,11 @@
             transition: all 0.3s ease;
         }
 
+        .cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
         .submit-btn {
             background: linear-gradient(135deg, #2ecc71, #27ae60);
             color: white;
@@ -412,10 +521,137 @@
             transition: all 0.3s ease;
         }
 
-        .cancel-btn:hover,
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group select {
+            background-color: #000000;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .form-group select:hover {
+            background-color: #1a1a1a;
+        }
+
+        .form-group select option {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        /* CKEditor Custom Styling */
+        .ck-editor__editable {
+            min-height: 100px !important;
+            max-height: 150px !important;
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0 0 6px 6px !important;
+            overflow-y: auto !important;
+        }
+
+        .ck-editor__editable:hover {
+            background-color: #1a1a1a !important;
+            border-color: #3b82f6 !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable {
+            background: #000000 !important;
+            border: none !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #3b82f6 #1a1a1a !important;
+        }
+
+        /* Custom scrollbar styling */
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar {
+            width: 8px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-track {
+            background: #1a1a1a !important;
+            border-radius: 4px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-thumb {
+            background: #3b82f6 !important;
+            border-radius: 4px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa !important;
+        }
+
+        .ck.ck-toolbar {
+            background: #1a1a1a !important;
+            border: 1px solid #2d2d2d !important;
+            border-radius: 6px 6px 0 0 !important;
+        }
+
+        .ck.ck-toolbar .ck-toolbar__items {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-button,
+        .ck.ck-button.ck-on {
+            color: #ffffff !important;
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-button:hover,
+        .ck.ck-button.ck-on:hover {
+            background: #2d2d2d !important;
+            color: #3b82f6 !important;
+        }
+
+        .ck.ck-toolbar .ck.ck-toolbar__separator {
+            background: #2d2d2d !important;
+        }
+
+        .ck-content {
+            color: #ffffff !important;
+        }
+
+        .ck.ck-dropdown .ck-dropdown__panel {
+            background: #1a1a1a !important;
+            border: 1px solid #2d2d2d !important;
+        }
+
+        .ck.ck-list {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-list__item:hover {
+            background: #2d2d2d !important;
+        }
+
+        .ck.ck-list__item .ck-button:hover {
+            background: #2d2d2d !important;
+        }
+
+        .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label {
+            color: #ffffff !important;
+        }
+
+        .ck.ck-color-grid__tile:hover {
+            border-color: #3b82f6 !important;
+        }
+
+        .ck.ck-color-picker {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-input {
+            background: #000000 !important;
+            color: #ffffff !important;
+            border-color: #2d2d2d !important;
+        }
+
+        .ck.ck-input:focus {
+            border-color: #3b82f6 !important;
         }
     </style>
 </head>
@@ -479,7 +715,7 @@
             <div class="products-section">
                 <div class="section-header">
                     <h2>Your Products</h2>
-                    <button class="btn btn-add" onclick="openAddProductModal()">
+                    <button class="btn btn-add" onclick="showAddProductModal()">
                         <i class="fas fa-plus"></i>
                         Add Product
                     </button>
@@ -493,10 +729,10 @@
 
     <!-- Add the modal HTML before the closing body tag -->
     <div id="addProductModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2>Add New Product</h2>
-                <button class="close-btn" onclick="closeAddProductModal()">&times;</button>
+                <button type="button" class="close-btn" onclick="closeAddProductModal()">&times;</button>
             </div>
             <form id="addProductForm" onsubmit="handleAddProduct(event)">
                 <div class="form-group">
@@ -505,33 +741,43 @@
                 </div>
                 <div class="form-group">
                     <label for="productCategory">Category</label>
-                    <select id="productCategory" name="category" required>
+                    <select id="productCategory" name="category" required onchange="loadSubcategories(this.value)">
                         <option value="">Select Category</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Fashion">Fashion</option>
-                        <option value="Home">Home & Living</option>
-                        <option value="Books">Books</option>
-                        <option value="Sports">Sports & Fitness</option>
-                        <option value="Beauty">Beauty & Personal Care</option>
-                        <option value="Food">Food & Beverages</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="productPrice">Price ($)</label>
+                    <label for="productSubcategory">Subcategory</label>
+                    <select id="productSubcategory" name="subcategory" required>
+                        <option value="">Select Category First</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productPrice">General Price (₹)</label>
                     <input type="number" id="productPrice" name="price" min="0" step="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label for="productStock">Stock Quantity</label>
-                    <input type="number" id="productStock" name="stock" min="0" required>
+                        <label for="productCreditPrice">Credit Price (₹)</label>
+                        <input type="number" id="productCreditPrice" name="creditPrice" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productQuantity">Quantity</label>
+                        <input type="number" id="productQuantity" name="quantity" min="0" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="productDescription">Description</label>
-                    <textarea id="productDescription" name="description" rows="4" required></textarea>
+                    <textarea id="productDescription" name="description" class="tinymce-editor"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="productImage">Product Image URL</label>
-                    <input type="url" id="productImage" name="image" required>
+                    <label for="productImage">Product Image</label>
+                    <div class="file-upload-container" onclick="document.getElementById('productImage').click()">
+                        <i class="fas fa-upload"></i>
+                        <span>Click to upload image</span>
                 </div>
+                    <input type="file" id="productImage" name="image" accept="image/*" required style="display: none;">
+                </div>
+                <div class="image-preview" id="imagePreview"></div>
                 <div class="modal-footer">
                     <button type="button" class="cancel-btn" onclick="closeAddProductModal()">Cancel</button>
                     <button type="submit" class="submit-btn">Add Product</button>
@@ -540,6 +786,7 @@
         </div>
     </div>
 
+    <script src="categories.js"></script>
     <script>
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -563,51 +810,103 @@
 
         async function loadVendorStats() {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
                 const response = await fetch('http://localhost:5506/api/vendor/stats', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
-                
-                if (response.ok) {
-                    const stats = await response.json();
-                    document.getElementById('totalProducts').textContent = stats.products;
-                    document.getElementById('totalOrders').textContent = stats.orders;
-                    document.getElementById('totalRevenue').textContent = `$${stats.revenue.toFixed(2)}`;
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error('Failed to fetch vendor stats');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch vendor stats');
+                }
+
+                // Update the stats
+                const totalProducts = document.getElementById('totalProducts');
+                if (totalProducts) {
+                    totalProducts.textContent = data.vendorStats.totalProducts.toLocaleString() || '0';
+                }
+
+                const totalOrders = document.getElementById('totalOrders');
+                if (totalOrders) {
+                    totalOrders.textContent = data.vendorStats.totalOrders.toLocaleString() || '0';
+                }
+
+                const totalRevenue = document.getElementById('totalRevenue');
+                if (totalRevenue) {
+                    totalRevenue.textContent = `₹${(data.vendorStats.totalRevenue || 0).toLocaleString()}`;
+                }
+
+                const shopRating = document.getElementById('shopRating');
+                if (shopRating) {
+                    const rating = data.vendorStats.averageRating || 0;
+                    shopRating.textContent = `${rating.toFixed(1)} ★`;
+                }
+
+                // Update last refresh time if element exists
+                const lastRefresh = document.getElementById('lastRefresh');
+                if (lastRefresh) {
+                    lastRefresh.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                 }
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+                
+                // Update stats to show error state
+                const statElements = document.querySelectorAll('.value');
+                statElements.forEach(el => {
+                    el.textContent = 'Error';
+                });
             }
         }
 
         async function loadVendorProducts() {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
                 const response = await fetch('http://localhost:5506/api/vendor/products', {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const productsGrid = document.getElementById('productsGrid');
-                    productsGrid.innerHTML = '';
 
-                    data.products.forEach(product => {
-                        productsGrid.innerHTML += `
-                            <div class="product-card">
-                                <img src="${product.image || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
-                                <div class="product-info">
-                                    <div class="product-title">${product.name}</div>
-                                    <div class="product-price">$${product.price.toFixed(2)}</div>
-                                    <div class="product-stock">Stock: ${product.stock}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error('Failed to fetch products');
                 }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch products');
+                }
+
+                renderProducts(data.products);
             } catch (error) {
-                console.error('Error loading products:', error);
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
             }
         }
 
@@ -624,61 +923,281 @@
             window.location.href = 'profile.html#signin';
         }
 
-        function openAddProductModal() {
+        function showAddProductModal() {
             document.getElementById('addProductModal').style.display = 'block';
-            document.getElementById('addProductForm').reset();
+            loadCategories();
+            initCKEditor();
         }
 
-        function closeAddProductModal() {
-            document.getElementById('addProductModal').style.display = 'none';
+        async function loadCategories() {
+            const categorySelect = document.getElementById('productCategory');
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            
+            // Add predefined categories
+            Object.keys(PREDEFINED_CATEGORIES).forEach(category => {
+                categorySelect.innerHTML += `
+                    <option value="${category}">${category}</option>
+                `;
+            });
         }
 
+        function loadSubcategories(category) {
+            const subcategorySelect = document.getElementById('productSubcategory');
+            subcategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+            
+            if (!category) return;
+            
+            // Get subcategories for the selected category
+            const subcategories = PREDEFINED_CATEGORIES[category] || [];
+            
+            // Add subcategories to select element
+            subcategories.forEach(subcategory => {
+                subcategorySelect.innerHTML += `
+                    <option value="${subcategory}">${subcategory}</option>
+                `;
+            });
+        }
+
+        document.getElementById('productImage').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+            }
+        });
+
+        // Update the initCKEditor function
+        let editor = null;
+
+        function initCKEditor() {
+            if (typeof ClassicEditor === 'undefined') {
+                console.error('CKEditor is not loaded');
+                return;
+            }
+
+            // Destroy existing editor if it exists
+            if (editor) {
+                editor.destroy().catch(error => {
+                    console.error('Error destroying editor:', error);
+                });
+            }
+
+            const editorElement = document.querySelector('#productDescription');
+            if (!editorElement) {
+                console.error('Editor element not found');
+                return;
+            }
+
+            ClassicEditor
+                .create(editorElement, {
+                    toolbar: {
+                        items: [
+                            'undo', 'redo', '|',
+                            'heading', '|',
+                            'fontFamily', 'fontSize', '|',
+                            'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', '|',
+                            'fontColor', 'fontBackgroundColor', '|',
+                            'alignment', '|',
+                            'numberedList', 'bulletedList', '|',
+                            'outdent', 'indent', '|',
+                            'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|',
+                            'findAndReplace', '|',
+                            'horizontalLine', 'pageBreak', '|',
+                            'sourceEditing'
+                        ],
+                        shouldNotGroupWhenFull: true
+                    },
+                    fontFamily: {
+                        options: [
+                            'default',
+                            'Arial, Helvetica, sans-serif',
+                            'Courier New, Courier, monospace',
+                            'Georgia, serif',
+                            'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                            'Tahoma, Geneva, sans-serif',
+                            'Times New Roman, Times, serif',
+                            'Trebuchet MS, Helvetica, sans-serif',
+                            'Verdana, Geneva, sans-serif'
+                        ],
+                        supportAllValues: true
+                    },
+                    fontSize: {
+                        options: [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72],
+                        supportAllValues: true
+                    },
+                    fontColor: {
+                        columns: 10,
+                        documentColors: 200,
+                    },
+                    fontBackgroundColor: {
+                        columns: 10,
+                        documentColors: 200,
+                    },
+                    image: {
+                        styles: ['alignLeft', 'alignCenter', 'alignRight'],
+                        resizeOptions: [
+                            {
+                                name: 'resizeImage:original',
+                                label: 'Original',
+                                value: null
+                            },
+                            {
+                                name: 'resizeImage:25',
+                                label: '25%',
+                                value: '25'
+                            },
+                            {
+                                name: 'resizeImage:50',
+                                label: '50%',
+                                value: '50'
+                            },
+                            {
+                                name: 'resizeImage:75',
+                                label: '75%',
+                                value: '75'
+                            }
+                        ],
+                        toolbar: [
+                            'imageStyle:alignLeft', 'imageStyle:alignCenter', 'imageStyle:alignRight', '|',
+                            'imageResize', '|',
+                            'imageTextAlternative', 'toggleImageCaption', '|',
+                            'linkImage'
+                        ]
+                    },
+                    table: {
+                        contentToolbar: [
+                            'tableColumn', 'tableRow', 'mergeTableCells', 'tableCellProperties', 'tableProperties',
+                            'toggleTableCaption'
+                        ]
+                    },
+                    heading: {
+                        options: [
+                            { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                            { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                            { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                            { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                            { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                            { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                            { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
+                        ]
+                    },
+                    placeholder: 'Start typing your product description...',
+                    style: {
+                        definitions: [
+                            {
+                                name: 'Article Category',
+                                element: 'h3',
+                                classes: ['category']
+                            },
+                            {
+                                name: 'Info Box',
+                                element: 'p',
+                                classes: ['info-box']
+                            }
+                        ]
+                    },
+                    link: {
+                        defaultProtocol: 'https://',
+                        decorators: {
+                            openInNewTab: {
+                                mode: 'manual',
+                                label: 'Open in a new tab',
+                                defaultValue: true,
+                                attributes: {
+                                    target: '_blank',
+                                    rel: 'noopener noreferrer'
+                                }
+                            }
+                        }
+                    }
+                })
+                .then(newEditor => {
+                    editor = newEditor;
+                    console.log('CKEditor initialized successfully');
+                })
+                .catch(error => {
+                    console.error('Error initializing CKEditor:', error);
+                });
+        }
+
+        // Update the handleAddProduct function
         async function handleAddProduct(event) {
             event.preventDefault();
             const form = event.target;
             const formData = new FormData(form);
             
-            const productData = {
-                name: formData.get('name'),
-                category: formData.get('category'),
-                price: parseFloat(formData.get('price')),
-                stock: parseInt(formData.get('stock')),
-                description: formData.get('description'),
-                image: formData.get('image')
-            };
-
+            // Get the CKEditor content safely
+            const description = editor ? editor.getData() : '';
+            formData.set('description', description);
+            
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                // Validate required fields
+                if (!formData.get('category') || !formData.get('subcategory')) {
+                    throw new Error('Category and subcategory are required');
+                }
+
                 const response = await fetch('http://localhost:5506/api/vendor/products', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(productData)
+                    body: formData
                 });
 
-                if (response.ok) {
-                    closeAddProductModal();
-                    loadVendorProducts(); // Refresh the products grid
-                    // You could add a success message here
-                    alert('Product added successfully!');
-                } else {
-                    const error = await response.json();
-                    alert(error.error || 'Failed to add product');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to add product');
                 }
+
+                const data = await response.json();
+                showNotification('Product added successfully!', 'success');
+                closeAddProductModal();
+                await fetchAndDisplayProducts();
             } catch (error) {
-                console.error('Error adding product:', error);
-                alert('Failed to add product. Please try again.');
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
             }
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('addProductModal');
-            if (event.target === modal) {
-                closeAddProductModal();
+        // Update the closeAddProductModal function
+        async function closeAddProductModal() {
+            if (editor) {
+                try {
+                    await editor.destroy();
+                    editor = null;
+                } catch (error) {
+                    console.error('Error destroying editor:', error);
+                }
+            }
+            document.getElementById('addProductModal').style.display = 'none';
+            document.getElementById('addProductForm').reset();
+            if (document.getElementById('imagePreview')) {
+                document.getElementById('imagePreview').innerHTML = '';
             }
         }
+
+        // Remove any existing click event listeners on the modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('addProductModal');
+            const modalContent = modal.querySelector('.modal-content');
+            
+            // Prevent modal from closing when clicking inside the modal content
+            modalContent.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        });
     </script>
 </body>
 </html> 

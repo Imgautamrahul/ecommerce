@@ -190,33 +190,33 @@ function markAllAsRead() {
     showToast('All notifications marked as read');
 }
 
-// Function to fetch admin-uploaded products
-async function fetchAdminProducts() {
+// Function to fetch all products (both admin and vendor)
+async function fetchAllProducts() {
     try {
-        const response = await fetch('http://localhost:5506/api/admin/products');
-        if (!response.ok) throw new Error('Failed to fetch admin products');
+        const response = await fetch('http://localhost:5506/api/products');
+        if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
         return data.products || [];
     } catch (error) {
-        console.error('Error fetching admin products:', error);
+        console.error('Error fetching products:', error);
         return [];
     }
 }
 
 // Modified renderHome function
 async function renderHome() {
-    // Fetch admin products
-    const adminProducts = await fetchAdminProducts();
+    // Fetch all products
+    const allProducts = await fetchAllProducts();
     
-    // Combine admin products with static products
-    const allProducts = [...products, ...adminProducts.map(p => ({
+    // Map products to the expected format
+    const formattedProducts = allProducts.map(p => ({
         ...p,
         id: p._id, // Convert _id to id for compatibility
         rating: p.rating || 4.5,
         reviews: p.reviews || [],
         specs: p.specs || [],
         available: p.stock > 0
-    }))];
+    }));
 
     app.innerHTML = `
         <div class="pb-16">
@@ -382,21 +382,15 @@ async function renderHome() {
                 </div>
 
                 <!-- Categories -->
-                <div class="px-4 mb-6">
-                    <div class="flex overflow-x-auto scroll-smooth space-x-4 pb-2">
-                        ${categories.map(category => `
-                            <button class="ripple flex-shrink-0 px-6 py-2 rounded-full ${
-                                category === 'All' ? 'bg-green-500 text-white' : 'bg-white shadow'
-                            } whitespace-nowrap">
-                                ${category}
-                            </button>
-                        `).join('')}
+                <div class="category-section">
+                    <div class="category-container px-4 mb-6">
+                        <!-- Categories will be loaded dynamically -->
                     </div>
                 </div>
 
                 <!-- Products Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 mb-20">
-                    ${allProducts.map(product => `
+                    ${formattedProducts.map(product => `
                         <div class="product-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer" 
                              onclick="showProductDetails(${JSON.stringify(product).replace(/"/g, '&quot;')})">
                             <div class="relative">

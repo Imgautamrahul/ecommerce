@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Your Store</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="admin-dashboard.css">
+    <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/super-build/ckeditor.js"></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -37,9 +38,9 @@
                     <i class="fas fa-users"></i>
                     <span>Users</span>
                 </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Analytics</span>
+                <a href="#" class="nav-item" onclick="showCategories()">
+                    <i class="fas fa-tags"></i>
+                    <span>Categories</span>
                 </a>
                 <a href="#" class="nav-item">
                     <i class="fas fa-cog"></i>
@@ -236,30 +237,43 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="productCategory">Category</label>
-                                    <select id="productCategory" name="category" required>
+                                    <select id="productCategory" name="category" required onchange="loadSubcategories(this.value)">
                                         <option value="">Select Category</option>
-                                        <option value="Electronics">Electronics</option>
-                                        <option value="Clothing">Clothing</option>
-                                        <option value="Books">Books</option>
-                                        <option value="Home">Home & Living</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="productPrice">Price (₹)</label>
-                                    <input type="number" id="productPrice" name="price" min="0" step="0.01" required>
+                                    <label for="productSubcategory">Subcategory</label>
+                                    <select id="productSubcategory" name="subcategory" required>
+                                        <option value="">Select Category First</option>
+                                    </select>
                                 </div>
-                                <div class="form-group">
-                                    <label for="productStock">Stock Quantity</label>
-                                    <input type="number" id="productStock" name="stock" min="0" required>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="productPrice">General Price (₹)</label>
+                                        <input type="number" id="productPrice" name="price" min="0" step="0.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="productCreditPrice">Credit Price (₹)</label>
+                                        <input type="number" id="productCreditPrice" name="creditPrice" min="0" step="0.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="productQuantity">Quantity</label>
+                                        <input type="number" id="productQuantity" name="quantity" min="0" required>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="productDescription">Description</label>
-                                    <textarea id="productDescription" name="description" rows="4" required></textarea>
+                                    <textarea id="productDescription" name="description" class="tinymce-editor"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label for="productImage">Product Image URL</label>
-                                    <input type="url" id="productImage" name="image" required>
+                                    <label for="productImage">Product Image</label>
+                                    <div class="file-upload-container">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Click to upload image</span>
+                                    </div>
+                                    <input type="file" id="productImage" name="image" accept="image/*" required>
                                 </div>
+                                <div class="image-preview"></div>
                                 <div class="modal-footer">
                                     <button type="button" class="cancel-btn" onclick="closeAddProductModal()">Cancel</button>
                                     <button type="submit" class="submit-btn">Add Product</button>
@@ -373,11 +387,77 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Category Section -->
+                <div id="categoriesSection" class="content-section" style="display: none;">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h2>Category Management</h2>
+                            <div class="header-actions">
+                                <button class="add-btn" onclick="showAddCategoryModal()">
+                                    <i class="fas fa-plus"></i> Add Category
+                                </button>
+                            </div>
+                        </div>
+                        <div class="categories-grid" id="categoriesGrid">
+                            <!-- Categories will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Category Modal -->
+                <div id="addCategoryModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Add New Category</h2>
+                            <button class="close-btn" onclick="closeAddCategoryModal()">&times;</button>
+                        </div>
+                        <form id="addCategoryForm" onsubmit="handleAddCategory(event)">
+                            <div class="form-group">
+                                <label for="categoryName">Category Name</label>
+                                <input type="text" id="categoryName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="categoryDescription">Description</label>
+                                <textarea id="categoryDescription" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="cancel-btn" onclick="closeAddCategoryModal()">Cancel</button>
+                                <button type="submit" class="submit-btn">Add Category</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Add Subcategory Modal -->
+                <div id="addSubcategoryModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Add New Subcategory</h2>
+                            <button class="close-btn" onclick="closeAddSubcategoryModal()">&times;</button>
+                        </div>
+                        <form id="addSubcategoryForm" onsubmit="handleAddSubcategory(event)">
+                            <input type="hidden" id="parentCategoryId" name="categoryId">
+                            <div class="form-group">
+                                <label for="subcategoryName">Subcategory Name</label>
+                                <input type="text" id="subcategoryName" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="subcategoryDescription">Description</label>
+                                <textarea id="subcategoryDescription" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="cancel-btn" onclick="closeAddSubcategoryModal()">Cancel</button>
+                                <button type="submit" class="submit-btn">Add Subcategory</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <script src="admin-dashboard.js"></script>
+    <script src="categories.js"></script>
     <script>
         // Check for admin authentication
         const adminToken = localStorage.getItem('adminToken');
@@ -402,22 +482,26 @@
         // Fetch and display vendors
         async function fetchVendors() {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
                 const response = await fetch('http://localhost:5506/api/admin/vendors', {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("Oops, we haven't got JSON!");
                 }
                 
                 const data = await response.json();
@@ -429,6 +513,11 @@
             } catch (error) {
                 console.error('Error:', error);
                 showNotification(error.message, 'error');
+                
+                // If unauthorized, redirect to login
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    window.location.href = 'profile.html#signin';
+                }
             }
         }
 
@@ -493,13 +582,24 @@
         // View vendor details
         async function viewVendorDetails(vendorId) {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
                 const response = await fetch(`http://localhost:5506/api/admin/vendors/${vendorId}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Failed to fetch vendor details');
                 }
@@ -514,6 +614,11 @@
             } catch (error) {
                 console.error('Error:', error);
                 showNotification(error.message, 'error');
+                
+                // If unauthorized, redirect to login
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    window.location.href = 'profile.html#signin';
+                }
             }
         }
 
@@ -565,21 +670,39 @@
         // Handle vendor action (approve/reject)
         async function handleVendorAction(vendorId, action) {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
                 const response = await fetch(`http://localhost:5506/api/admin/vendors/${vendorId}/${action}`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 });
                 
-                if (!response.ok) throw new Error(`Failed to ${action} vendor`);
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error(`Failed to ${action} vendor`);
+                }
                 
                 showNotification(`Vendor ${action}ed successfully`, 'success');
                 closeVendorDetailsModal();
                 fetchVendors();
             } catch (error) {
                 console.error('Error:', error);
-                showNotification(`Failed to ${action} vendor`, 'error');
+                showNotification(`Failed to ${action} vendor: ${error.message}`, 'error');
+                
+                // If unauthorized, redirect to login
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    window.location.href = 'profile.html#signin';
+                }
             }
         }
 
@@ -671,6 +794,852 @@
                     <td>${new Date(order.createdAt).toLocaleDateString()}</td>
                 </tr>
             `).join('');
+        }
+
+        // Function to show categories section
+        async function showCategories() {
+            // Hide other sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show categories section
+            document.getElementById('categoriesSection').style.display = 'block';
+
+            // Update active nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('.nav-item i.fa-tags').parentElement.classList.add('active');
+
+            // Fetch and display categories
+            await fetchCategories();
+        }
+
+        // Function to fetch and display categories
+        async function fetchCategories() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch categories');
+                }
+
+                const data = await response.json();
+                renderCategories(data.products);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to render categories
+        function renderCategories(products) {
+            const grid = document.getElementById('categoriesGrid');
+            if (!products || products.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-tags"></i>
+                        <p>No categories found</p>
+                        <button class="add-btn" onclick="showAddCategoryModal()">
+                            Add Your First Category
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = products.map(product => {
+                const category = product.category || 'Uncategorized';
+                return `
+                    <div class="category-card">
+                        <div class="category-header">
+                            <h3>${category}</h3>
+                            <button class="action-btn" onclick="showAddSubcategoryModal('${category}')">
+                                <i class="fas fa-plus"></i> Add Subcategory
+                            </button>
+                        </div>
+                        <p class="category-description">${product.description || 'No description'}</p>
+                        <div class="subcategories-list">
+                            <h4>Subcategories (${product.subcategory ? 1 : 0})</h4>
+                            ${product.subcategory ? `
+                                <ul>
+                                    <li>
+                                        <span>${product.subcategory}</span>
+                                        <small>${product.description || ''}</small>
+                                    </li>
+                                </ul>
+                            ` : '<p class="no-subcategories">No subcategories yet</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Modal functions
+        function showAddCategoryModal() {
+            document.getElementById('addCategoryModal').style.display = 'block';
+        }
+
+        function closeAddCategoryModal() {
+            document.getElementById('addCategoryModal').style.display = 'none';
+            document.getElementById('addCategoryForm').reset();
+        }
+
+        function showAddSubcategoryModal(category) {
+            document.getElementById('parentCategoryId').value = category;
+            document.getElementById('addSubcategoryModal').style.display = 'block';
+        }
+
+        function closeAddSubcategoryModal() {
+            document.getElementById('addSubcategoryModal').style.display = 'none';
+            document.getElementById('addSubcategoryForm').reset();
+        }
+
+        // Handle form submissions
+        async function handleAddCategory(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/categories', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData))
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create category');
+                }
+
+                showNotification('Category created successfully', 'success');
+                closeAddCategoryModal();
+                await fetchCategories();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function handleAddSubcategory(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const category = document.getElementById('parentCategoryId').value;
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`http://localhost:5506/api/categories/${category}/subcategories`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData))
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create subcategory');
+                }
+
+                showNotification('Subcategory created successfully', 'success');
+                closeAddSubcategoryModal();
+                await fetchCategories();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to load categories into the select element
+        async function loadCategories() {
+            const categorySelect = document.getElementById('productCategory');
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            
+            // Add predefined categories
+            Object.keys(PREDEFINED_CATEGORIES).forEach(category => {
+                categorySelect.innerHTML += `
+                    <option value="${category}">${category}</option>
+                `;
+            });
+        }
+
+        // Function to load subcategories based on selected category
+        function loadSubcategories(category) {
+            const subcategorySelect = document.getElementById('productSubcategory');
+            subcategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+            
+            if (!category) return;
+            
+            // Get subcategories for the selected category
+            const subcategories = PREDEFINED_CATEGORIES[category] || [];
+            
+            // Add subcategories to select element
+            subcategories.forEach(subcategory => {
+                subcategorySelect.innerHTML += `
+                    <option value="${subcategory}">${subcategory}</option>
+                `;
+            });
+        }
+
+        // Replace CKEditor initialization with enhanced configuration
+        let editor;
+
+        function initCKEditor() {
+            ClassicEditor
+                .create(document.querySelector('#productDescription'), {
+                    toolbar: {
+                        items: [
+                            'undo', 'redo', '|',
+                            'heading', '|',
+                            'fontFamily', 'fontSize', '|',
+                            'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', '|',
+                            'fontColor', 'fontBackgroundColor', '|',
+                            'alignment', '|',
+                            'numberedList', 'bulletedList', '|',
+                            'outdent', 'indent', '|',
+                            'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|',
+                            'findAndReplace', '|',
+                            'horizontalLine', 'pageBreak', '|',
+                            'sourceEditing'
+                        ],
+                        shouldNotGroupWhenFull: true
+                    },
+                    fontFamily: {
+                        options: [
+                            'default',
+                            'Arial, Helvetica, sans-serif',
+                            'Courier New, Courier, monospace',
+                            'Georgia, serif',
+                            'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                            'Tahoma, Geneva, sans-serif',
+                            'Times New Roman, Times, serif',
+                            'Trebuchet MS, Helvetica, sans-serif',
+                            'Verdana, Geneva, sans-serif'
+                        ],
+                        supportAllValues: true
+                    },
+                    fontSize: {
+                        options: [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72],
+                        supportAllValues: true
+                    },
+                    fontColor: {
+                        columns: 10,
+                        documentColors: 200,
+                    },
+                    fontBackgroundColor: {
+                        columns: 10,
+                        documentColors: 200,
+                    },
+                    image: {
+                        styles: ['alignLeft', 'alignCenter', 'alignRight'],
+                        resizeOptions: [
+                            {
+                                name: 'resizeImage:original',
+                                label: 'Original',
+                                value: null
+                            },
+                            {
+                                name: 'resizeImage:25',
+                                label: '25%',
+                                value: '25'
+                            },
+                            {
+                                name: 'resizeImage:50',
+                                label: '50%',
+                                value: '50'
+                            },
+                            {
+                                name: 'resizeImage:75',
+                                label: '75%',
+                                value: '75'
+                            }
+                        ],
+                        toolbar: [
+                            'imageStyle:alignLeft', 'imageStyle:alignCenter', 'imageStyle:alignRight', '|',
+                            'imageResize', '|',
+                            'imageTextAlternative', 'toggleImageCaption', '|',
+                            'linkImage'
+                        ]
+                    },
+                    table: {
+                        contentToolbar: [
+                            'tableColumn', 'tableRow', 'mergeTableCells', 'tableCellProperties', 'tableProperties',
+                            'toggleTableCaption'
+                        ]
+                    },
+                    heading: {
+                        options: [
+                            { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                            { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                            { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                            { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                            { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+                            { model: 'heading5', view: 'h5', title: 'Heading 5', class: 'ck-heading_heading5' },
+                            { model: 'heading6', view: 'h6', title: 'Heading 6', class: 'ck-heading_heading6' }
+                        ]
+                    },
+                    placeholder: 'Start typing your product description...',
+                    style: {
+                        definitions: [
+                            {
+                                name: 'Article Category',
+                                element: 'h3',
+                                classes: ['category']
+                            },
+                            {
+                                name: 'Info Box',
+                                element: 'p',
+                                classes: ['info-box']
+                            }
+                        ]
+                    },
+                    link: {
+                        defaultProtocol: 'https://',
+                        decorators: {
+                            openInNewTab: {
+                                mode: 'manual',
+                                label: 'Open in a new tab',
+                                defaultValue: true,
+                                attributes: {
+                                    target: '_blank',
+                                    rel: 'noopener noreferrer'
+                                }
+                            }
+                        }
+                    }
+                })
+                .then(newEditor => {
+                    editor = newEditor;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        // Update the handleAddProduct function to get CKEditor content
+        async function handleAddProduct(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Get the CKEditor content
+            const description = editor.getData();
+            formData.set('description', description);
+            
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/admin/products', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add product');
+                }
+
+                showNotification('Product added successfully!', 'success');
+                closeAddProductModal();
+                await fetchAndDisplayProducts();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Failed to add product: ' + error.message, 'error');
+            }
+        }
+
+        // Initialize CKEditor when showing the modal
+        function showAddProductModal() {
+            document.getElementById('addProductModal').style.display = 'block';
+            loadCategories();
+            initCKEditor();
+        }
+
+        // Destroy CKEditor instance when closing the modal
+        function closeAddProductModal() {
+            if (editor) {
+                editor.destroy()
+                    .then(() => {
+                        document.getElementById('addProductModal').style.display = 'none';
+                        document.getElementById('addProductForm').reset();
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            } else {
+                document.getElementById('addProductModal').style.display = 'none';
+                document.getElementById('addProductForm').reset();
+            }
+        }
+
+        // Add this to your existing script
+        document.getElementById('productImage').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+            }
+        });
+
+        // Function to show products section
+        async function showProducts() {
+            // Hide other sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById('productsSection').style.display = 'block';
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('.nav-item i.fa-box').parentElement.classList.add('active');
+
+            // Fetch and display products
+            await fetchAndDisplayProducts();
+        }
+
+        // Function to fetch and display products
+        async function fetchAndDisplayProducts() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/admin/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error('Failed to fetch products');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch products');
+                }
+
+                renderProducts(data.products);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to render products
+        function renderProducts(products) {
+            const productsList = document.getElementById('productsList');
+            if (!products || products.length === 0) {
+                productsList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No products found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            productsList.innerHTML = products.map(product => `
+                <tr>
+                    <td>
+                        <img src="${product.image || 'placeholder.jpg'}" alt="${product.name}" 
+                            style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                    </td>
+                    <td>${product.name}</td>
+                    <td>${product.category} - ${product.subcategory}</td>
+                    <td>₹${product.price.toFixed(2)}</td>
+                    <td>${product.stock}</td>
+                    <td>
+                        <button class="action-btn view" onclick="editProduct('${product._id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteProduct('${product._id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Function to delete a product
+        async function deleteProduct(productId) {
+            if (!confirm('Are you sure you want to delete this product?')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`http://localhost:5506/api/admin/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete product');
+                }
+
+                showNotification('Product deleted successfully', 'success');
+                await fetchAndDisplayProducts();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to edit a product
+        function editProduct(productId) {
+            // TODO: Implement edit product functionality
+            showNotification('Edit functionality coming soon', 'info');
+        }
+
+        // Function to fetch admin statistics
+        async function fetchAdminStats() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/admin/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error('Failed to fetch admin stats');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch admin stats');
+                }
+
+                // Update stats with null checks and default values
+                const ordersCard = document.getElementById('ordersCard');
+                if (ordersCard) {
+                    ordersCard.textContent = (data.totalOrders || 0).toLocaleString();
+                }
+
+                const revenueCard = document.getElementById('revenueCard');
+                if (revenueCard) {
+                    revenueCard.textContent = `₹${(data.totalRevenue || 0).toLocaleString()}`;
+                }
+
+                const usersCard = document.getElementById('usersCard');
+                if (usersCard) {
+                    usersCard.textContent = (data.totalCustomers || 0).toLocaleString();
+                }
+
+                const productsCard = document.getElementById('productsCard');
+                if (productsCard) {
+                    productsCard.textContent = (data.totalProducts || 0).toLocaleString();
+                }
+
+                // Update vendor request count badge
+                const vendorRequestCount = document.getElementById('vendorRequestCount');
+                if (vendorRequestCount) {
+                    const count = data.pendingVendors || 0;
+                    vendorRequestCount.textContent = count.toString();
+                    vendorRequestCount.style.display = count > 0 ? 'inline' : 'none';
+                }
+
+            } catch (error) {
+                console.error('Error fetching admin stats:', error);
+                
+                // Set error state for all stat cards
+                ['ordersCard', 'revenueCard', 'usersCard', 'productsCard'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = 'Error';
+                    }
+                });
+                
+                const vendorRequestCount = document.getElementById('vendorRequestCount');
+                if (vendorRequestCount) {
+                    vendorRequestCount.style.display = 'none';
+                }
+            }
+        }
+
+        // Update the DOMContentLoaded event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const adminAuth = localStorage.getItem('adminAuth');
+            
+            if (!token || !adminAuth) {
+                window.location.href = 'profile.html';
+                return;
+            }
+
+            // Initial fetch of stats
+            fetchAdminStats();
+
+            // Set up refresh button event listener
+            const refreshBtn = document.getElementById('refreshStats');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', fetchAdminStats);
+            }
+        });
+
+        // Function to show users section
+        async function showUsers() {
+            // Hide other sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById('customersSection').style.display = 'block';
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('.nav-item i.fa-users').parentElement.classList.add('active');
+
+            // Fetch and display users
+            await fetchAndDisplayUsers();
+        }
+
+        // Function to fetch and display users
+        async function fetchAndDisplayUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch('http://localhost:5506/api/admin/customers', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = 'profile.html#signin';
+                        return;
+                    }
+                    throw new Error('Failed to fetch users');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch users');
+                }
+
+                renderUsers(data.customers);
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to render users
+        function renderUsers(users) {
+            const usersList = document.getElementById('customersList');
+            if (!users || users.length === 0) {
+                usersList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">No users found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            usersList.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.name || 'N/A'}</td>
+                    <td>${user.email}</td>
+                    <td>${user.phone || 'N/A'}</td>
+                    <td>${user.address ? `${user.address.city}, ${user.address.state}` : 'N/A'}</td>
+                    <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="action-btn view" onclick="viewUserDetails('${user._id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${user.isActive ? 
+                            `<button class="action-btn delete" onclick="deactivateUser('${user._id}')" title="Deactivate">
+                                <i class="fas fa-user-slash"></i>
+                            </button>` :
+                            `<button class="action-btn approve" onclick="activateUser('${user._id}')" title="Activate">
+                                <i class="fas fa-user-check"></i>
+                            </button>`
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Function to view user details
+        async function viewUserDetails(userId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`http://localhost:5506/api/admin/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user details');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to fetch user details');
+                }
+
+                showNotification('User details functionality coming soon', 'info');
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to deactivate user
+        async function deactivateUser(userId) {
+            if (!confirm('Are you sure you want to deactivate this user?')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`http://localhost:5506/api/admin/users/${userId}/deactivate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to deactivate user');
+                }
+
+                showNotification('User deactivated successfully', 'success');
+                await fetchAndDisplayUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to activate user
+        async function activateUser(userId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await fetch(`http://localhost:5506/api/admin/users/${userId}/activate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to activate user');
+                }
+
+                showNotification('User activated successfully', 'success');
+                await fetchAndDisplayUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Function to show customers section
+        async function showCustomers() {
+            // Hide other sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById('customersSection').style.display = 'block';
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector('.nav-item i.fa-users').parentElement.classList.add('active');
+
+            // Fetch and display customers
+            await fetchAndDisplayUsers();
         }
     </script>
 
@@ -903,6 +1872,395 @@
                 transform: translateX(0);
                 opacity: 1;
             }
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .category-header h3 {
+            margin: 0;
+            color: #1f2937;
+        }
+
+        .category-description {
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+
+        .subcategories-list {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+        }
+
+        .subcategories-list h4 {
+            color: #4b5563;
+            margin-bottom: 10px;
+        }
+
+        .subcategories-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .subcategories-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .subcategories-list li:last-child {
+            border-bottom: none;
+        }
+
+        .no-subcategories {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #9ca3af;
+        }
+
+        .add-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            background: #2563eb;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #000000;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input[type="text"]:hover,
+        .form-group input[type="number"]:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            background-color: #1a1a1a;
+            border-color: #3b82f6;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            background-color: #1a1a1a;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group .file-upload-container {
+            width: 100%;
+            height: 120px;
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #000000;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .form-group .file-upload-container:hover {
+            border-color: #60a5fa;
+            background-color: #1a1a1a;
+        }
+
+        .form-group .file-upload-container i {
+            font-size: 24px;
+            color: #3b82f6;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group .file-upload-container:hover i {
+            color: #60a5fa;
+            transform: scale(1.1);
+        }
+
+        .form-group .file-upload-container span {
+            color: #ffffff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group .file-upload-container:hover span {
+            color: #60a5fa;
+        }
+
+        .form-group select {
+            background-color: #000000;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .form-group select:hover {
+            background-color: #1a1a1a;
+        }
+
+        .form-group select option {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 8px;
+        }
+
+        .image-preview {
+            margin-top: 15px;
+            max-width: 200px;
+            max-height: 200px;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            background-color: #000000;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .tox-tinymce {
+            border: 1px solid #d1d5db !important;
+            border-radius: 6px !important;
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .tox-tinymce:hover {
+            background-color: #1a1a1a !important;
+            border-color: #3b82f6 !important;
+        }
+
+        .tox .tox-toolbar,
+        .tox .tox-toolbar__primary,
+        .tox .tox-toolbar__overflow,
+        .tox .tox-statusbar {
+            background-color: #1a1a1a !important;
+            border-color: #2d2d2d !important;
+        }
+
+        .tox .tox-tbtn {
+            color: #ffffff !important;
+        }
+
+        .tox .tox-tbtn:hover {
+            background-color: #2d2d2d !important;
+        }
+
+        .tox .tox-edit-area__iframe {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+
+        .tox .tox-statusbar a,
+        .tox .tox-statusbar__path-item,
+        .tox .tox-statusbar__wordcount {
+            color: #ffffff !important;
+        }
+
+        .tox:not([dir=rtl]) .tox-toolbar__group:not(:last-of-type) {
+            border-right-color: #2d2d2d !important;
+        }
+
+        /* CKEditor Custom Styling */
+        .ck-editor__editable {
+            min-height: 100px !important;
+            max-height: 150px !important;
+            background-color: #000000 !important;
+            color: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 0 0 6px 6px !important;
+            overflow-y: auto !important;
+        }
+
+        .ck-editor__editable:hover {
+            background-color: #1a1a1a !important;
+            border-color: #3b82f6 !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable {
+            background: #000000 !important;
+            border: none !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #3b82f6 #1a1a1a !important;
+        }
+
+        /* Custom scrollbar styling */
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar {
+            width: 8px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-track {
+            background: #1a1a1a !important;
+            border-radius: 4px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-thumb {
+            background: #3b82f6 !important;
+            border-radius: 4px !important;
+        }
+
+        .ck.ck-editor__main>.ck-editor__editable::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa !important;
+        }
+
+        .ck.ck-toolbar {
+            background: #1a1a1a !important;
+            border: 1px solid #2d2d2d !important;
+            border-radius: 6px 6px 0 0 !important;
+        }
+
+        .ck.ck-toolbar .ck-toolbar__items {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-button,
+        .ck.ck-button.ck-on {
+            color: #ffffff !important;
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-button:hover,
+        .ck.ck-button.ck-on:hover {
+            background: #2d2d2d !important;
+            color: #3b82f6 !important;
+        }
+
+        .ck.ck-toolbar .ck.ck-toolbar__separator {
+            background: #2d2d2d !important;
+        }
+
+        .ck-content {
+            color: #ffffff !important;
+        }
+
+        .ck.ck-dropdown .ck-dropdown__panel {
+            background: #1a1a1a !important;
+            border: 1px solid #2d2d2d !important;
+        }
+
+        .ck.ck-list {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-list__item:hover {
+            background: #2d2d2d !important;
+        }
+
+        .ck.ck-dropdown.ck-heading-dropdown .ck-dropdown__button .ck-button__label {
+            color: #ffffff !important;
+        }
+
+        .ck.ck-color-grid__tile:hover {
+            border-color: #3b82f6 !important;
+        }
+
+        .ck.ck-color-picker {
+            background: #1a1a1a !important;
+        }
+
+        .ck.ck-input {
+            background: #000000 !important;
+            color: #ffffff !important;
+            border-color: #2d2d2d !important;
+        }
+
+        .ck.ck-input:focus {
+            border-color: #3b82f6 !important;
+        }
+
+        .modal-content {
+            position: relative;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            margin: 2% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #1a1a1a;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #60a5fa;
         }
     </style>
 </body>

@@ -43,9 +43,16 @@ async function fetchAdminStats() {
             el.querySelector('.stat-value').textContent = 'Loading...';
         });
 
-        const response = await fetch('http://localhost:5506/api/admin/stats', {  // Updated port
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch('http://localhost:5506/api/admin/stats', {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         });
         
@@ -66,6 +73,11 @@ async function fetchAdminStats() {
         statElements.forEach(el => {
             el.querySelector('.stat-value').textContent = 'Error loading data';
         });
+        
+        // If unauthorized, redirect to login
+        if (error.message.includes('401') || error.message.includes('403')) {
+            window.location.href = 'profile.html#signin';
+        }
     }
 }
 
@@ -125,11 +137,13 @@ function animateValue(element, value, isCurrency = false) {
 // Auto refresh stats every 5 minutes
 setInterval(fetchAdminStats, 5 * 60 * 1000);
 
-// Initialize dashboard with loading states
+// Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
     // Check authentication
-    const adminToken = localStorage.getItem('adminToken');
-    if (!adminToken) {
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!token || userRole !== 'admin') {
         window.location.href = 'profile.html';
         return;
     }
@@ -141,7 +155,85 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('refreshStats')?.addEventListener('click', () => {
         fetchAdminStats();
     });
+
+    // Add event listeners for navigation
+    document.querySelector('.nav-item i.fa-users')?.parentElement?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showCustomers();
+    });
+
+    document.querySelector('.nav-item i.fa-box')?.parentElement?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showProducts();
+    });
+
+    document.querySelector('.nav-item i.fa-store')?.parentElement?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showVendors();
+    });
+
+    // Initial load of vendors to update badge count
+    fetchVendorCount();
 });
+
+// Function to fetch vendor count for badge
+async function fetchVendorCount() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch('http://localhost:5506/api/admin/vendors', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch vendors');
+        }
+
+        const data = await response.json();
+        const pendingVendors = data.vendors.filter(v => !v.isVerified).length;
+        
+        // Update badge count
+        const badge = document.getElementById('vendorRequestCount');
+        if (badge) {
+            badge.textContent = pendingVendors;
+            badge.style.display = pendingVendors > 0 ? 'block' : 'none';
+        }
+    } catch (error) {
+        console.error('Error fetching vendor count:', error);
+        // If unauthorized, redirect to login
+        if (error.message.includes('401') || error.message.includes('403')) {
+            window.location.href = 'profile.html#signin';
+        }
+    }
+}
+
+// Function to show dashboard
+function showDashboard() {
+    // Hide all sections
+    document.querySelectorAll('.dashboard-content > div').forEach(section => {
+        section.style.display = 'none';
+    });
+
+    // Show stats grid and recent activity
+    document.querySelector('.stats-grid').style.display = 'grid';
+    document.querySelector('.refresh-section').style.display = 'block';
+
+    // Update active nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector('.nav-item i.fa-home').parentElement.classList.add('active');
+
+    // Refresh stats
+    fetchAdminStats();
+}
 
 // Function to show customers section
 async function showCustomers() {
@@ -286,15 +378,6 @@ function formatDate(dateString) {
     }).format(date);
 }
 
-// Add event listener for Customers nav item
-document.addEventListener('DOMContentLoaded', () => {
-    const customersLink = document.querySelector('.nav-item i.fa-users').parentElement;
-    customersLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        showCustomers();
-    });
-});
-
 // Add search functionality
 const searchInput = document.getElementById('customerSearch');
 if (searchInput) {
@@ -345,13 +428,23 @@ async function fetchAndDisplayProducts() {
     `;
 
     try {
-        const response = await fetch('http://localhost:5506/api/admin/products', {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        const response = await fetch('http://localhost:5506/api/products', {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         });
 
-        if (!response.ok) throw new Error('Failed to fetch products');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch products');
+        }
 
         const data = await response.json();
 
@@ -362,6 +455,9 @@ async function fetchAndDisplayProducts() {
                         <div class="empty-state">
                             <i class="fas fa-box-open"></i>
                             <p>No products found</p>
+                            <button class="add-btn" onclick="showAddProductModal()">
+                                Add Your First Product
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -372,13 +468,15 @@ async function fetchAndDisplayProducts() {
         productsList.innerHTML = data.products.map(product => `
             <tr>
                 <td>
-                    <img src="${product.image}" alt="${product.name}" class="product-image">
+                    <img src="${product.image || 'placeholder.jpg'}" alt="${product.name}" class="product-image" onerror="this.src='placeholder.jpg'">
                 </td>
                 <td>
                     <div class="product-name">${product.name}</div>
+                    <small class="product-description">${product.description || ''}</small>
                 </td>
                 <td>
                     <span class="product-category">${product.category}</span>
+                    <small class="product-subcategory">${product.subcategory || ''}</small>
                 </td>
                 <td>
                     <div class="product-price">₹${product.price.toLocaleString()}</div>
@@ -448,26 +546,41 @@ async function handleAddProduct(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
+    const productData = Object.fromEntries(formData);
 
     try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
+
+        // Validate required fields
+        if (!productData.category || !productData.subcategory) {
+            throw new Error('Category and subcategory are required');
+        }
+
         const response = await fetch('http://localhost:5506/api/admin/products', {
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(Object.fromEntries(formData))
+            body: JSON.stringify(productData)
         });
 
-        if (!response.ok) throw new Error('Failed to add product');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to add product');
+        }
 
-        await fetchAndDisplayProducts();
-        closeAddProductModal();
-        // Show success message
+        const data = await response.json();
         showNotification('Product added successfully!', 'success');
+        closeAddProductModal();
+        await fetchAndDisplayProducts();
     } catch (error) {
         console.error('Error:', error);
-        showNotification('Failed to add product', 'error');
+        showNotification(error.message, 'error');
     }
 }
 
@@ -478,4 +591,99 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         showProducts();
     });
-}); 
+});
+
+// Function to show vendors section
+async function showVendors() {
+    // Hide other sections
+    document.querySelectorAll('.dashboard-content > div').forEach(section => {
+        section.style.display = 'none';
+    });
+
+    // Show vendors section
+    document.getElementById('vendorsSection').style.display = 'block';
+
+    // Update active nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector('.nav-item i.fa-store').parentElement.classList.add('active');
+
+    // Fetch and display vendors
+    await fetchVendors();
+}
+
+// Function to render vendors
+function renderVendors(vendors) {
+    const vendorsList = document.getElementById('vendorsList');
+    if (!vendors || vendors.length === 0) {
+        vendorsList.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="empty-state">
+                        <i class="fas fa-store"></i>
+                        <p>No vendors registered yet</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    vendorsList.innerHTML = vendors.map(vendor => `
+        <tr>
+            <td>
+                <div class="vendor-info">
+                    <span class="vendor-name">${vendor.businessName}</span>
+                    <span class="vendor-owner">${vendor.userId.name}</span>
+                </div>
+            </td>
+            <td>
+                <a href="mailto:${vendor.businessEmail}" class="vendor-email">
+                    ${vendor.businessEmail}
+                </a>
+            </td>
+            <td>${vendor.businessPhone}</td>
+            <td>${vendor.businessCategory}</td>
+            <td>
+                <span class="status-badge ${vendor.isVerified ? 'status-active' : 'status-pending'}">
+                    ${vendor.isVerified ? 'Active' : 'Pending'}
+                </span>
+            </td>
+            <td class="action-buttons">
+                <button onclick="viewVendorDetails('${vendor._id}')" class="action-btn view-btn" title="View Details">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="viewVendorOrders('${vendor._id}', '${vendor.businessName}')" class="action-btn orders-btn" title="View Orders">
+                    <i class="fas fa-shopping-cart"></i>
+                </button>
+                ${!vendor.isVerified ? `
+                    <button onclick="handleVendorAction('${vendor._id}', 'approve')" class="action-btn approve-btn" title="Approve Vendor">
+                        <i class="fas fa-check"></i>
+                    </button>
+                ` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Function to display vendor details
+function displayVendorDetails(vendor) {
+    document.getElementById('vBusinessName').textContent = vendor.businessName;
+    document.getElementById('vOwnerName').textContent = vendor.userId.name;
+    document.getElementById('vEmail').textContent = vendor.businessEmail;
+    document.getElementById('vPhone').textContent = vendor.businessPhone;
+    document.getElementById('vCategory').textContent = vendor.businessCategory;
+    document.getElementById('vDescription').textContent = vendor.businessDescription;
+    
+    // Address
+    document.getElementById('vStreet').textContent = vendor.businessAddress.street;
+    document.getElementById('vCity').textContent = vendor.businessAddress.city;
+    document.getElementById('vState').textContent = vendor.businessAddress.state;
+    document.getElementById('vPostalCode').textContent = vendor.businessAddress.postalCode;
+    
+    // Performance metrics
+    document.getElementById('vTotalProducts').textContent = vendor.products.length;
+    document.getElementById('vRating').textContent = `${vendor.rating.toFixed(1)} ★`;
+    document.getElementById('vMemberSince').textContent = new Date(vendor.createdAt).toLocaleDateString();
+} 

@@ -62,11 +62,23 @@ const userSchema = new mongoose.Schema({
     vendorProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
 });
 
+// Category Schema
+const categorySchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    description: String,
+    subcategories: [{
+        name: { type: String, required: true },
+        description: String
+    }],
+    createdAt: { type: Date, default: Date.now }
+});
+
 // Product Schema
 const productSchema = new mongoose.Schema({
     name: String,
     price: Number,
-    category: String,
+    category: { type: String, required: true },
+    subcategory: { type: String, required: true },
     description: String,
     image: String,
     stock: Number,
@@ -136,6 +148,7 @@ vendorSchema.pre('save', function(next) {
 
 // Models
 const User = mongoose.model('User', userSchema);
+const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
 const Order = mongoose.model('Order', orderSchema);
 const Vendor = mongoose.model('Vendor', vendorSchema);
@@ -336,7 +349,6 @@ const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        res.setHeader('Content-Type', 'application/json');
         return res.status(401).json({ 
             success: false,
             error: 'Access denied. No token provided.' 
@@ -348,8 +360,7 @@ const authenticateToken = (req, res, next) => {
         req.user = verified;
         next();
     } catch (error) {
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(400).json({ 
+        return res.status(401).json({ 
             success: false,
             error: 'Invalid token' 
         });
@@ -358,34 +369,53 @@ const authenticateToken = (req, res, next) => {
 
 // Add admin role check middleware
 const isAdmin = (req, res, next) => {
-    if (req.user.role !== 'admin') {
-        res.setHeader('Content-Type', 'application/json');
+    if (!req.user || req.user.role !== 'admin') {
         return res.status(403).json({ 
             success: false,
-            error: 'Access denied. Admin only.' 
+            error: 'Access denied. Admin privileges required.' 
         });
     }
     next();
 };
 
-// Protect admin routes with both middlewares
+// Admin stats endpoint
 app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const userCount = await User.countDocuments({ role: 'user' });
-        const productCount = await Product.countDocuments();
-        const orderCount = await Order.countDocuments();
-        const totalRevenue = await Order.aggregate([
+        // Fetch total customers (users with role 'user')
+        const totalCustomers = await User.countDocuments({ role: 'user' });
+        
+        // Fetch total products
+        const totalProducts = await Product.countDocuments();
+        
+        // Fetch total orders
+        const totalOrders = await Order.countDocuments();
+        
+        // Calculate total revenue from all orders
+        const revenueResult = await Order.aggregate([
             { $group: { _id: null, total: { $sum: "$totalAmount" } } }
         ]);
+        const totalRevenue = revenueResult[0]?.total || 0;
+        
+        // Fetch pending vendor count
+        const pendingVendors = await User.countDocuments({ 
+            role: 'vendor', 
+            isVerified: false 
+        });
 
         res.json({
-            users: userCount,
-            products: productCount,
-            orders: orderCount,
-            revenue: totalRevenue[0]?.total || 0
+            success: true,
+            totalCustomers,
+            totalProducts,
+            totalOrders,
+            totalRevenue,
+            pendingVendors
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch stats' });
+        console.error('Error fetching admin stats:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch admin stats'
+        });
     }
 });
 
@@ -460,11 +490,12 @@ app.get('/api/admin/products', authenticateToken, isAdmin, async (req, res) => {
 
 app.post('/api/admin/products', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const { name, category, price, stock, description, image } = req.body;
+        const { name, category, subcategory, price, stock, description, image } = req.body;
         
         const product = new Product({
             name,
             category,
+            subcategory,
             price: parseFloat(price),
             stock: parseInt(stock),
             description,
@@ -494,31 +525,15 @@ const isVendor = (req, res, next) => {
     next();
 };
 
-// Add vendor routes
-app.get('/api/vendor/products', authenticateToken, isVendor, async (req, res) => {
-    try {
-        const products = await Product.find({ vendor: req.user.userId }).sort({ createdAt: -1 });
-        res.json({
-            success: true,
-            total: products.length,
-            products
-        });
-    } catch (error) {
-        console.error('Error fetching vendor products:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to fetch products'
-        });
-    }
-});
-
+// Update vendor product routes
 app.post('/api/vendor/products', authenticateToken, isVendor, async (req, res) => {
     try {
-        const { name, category, price, stock, description, image } = req.body;
+        const { name, category, subcategory, price, stock, description, image } = req.body;
         
         const product = new Product({
             name,
             category,
+            subcategory,
             price: parseFloat(price),
             stock: parseInt(stock),
             description,
@@ -547,23 +562,82 @@ app.post('/api/vendor/products', authenticateToken, isVendor, async (req, res) =
     }
 });
 
-app.get('/api/vendor/stats', authenticateToken, isVendor, async (req, res) => {
+app.get('/api/vendor/products', authenticateToken, isVendor, async (req, res) => {
     try {
-        const productCount = await Product.countDocuments({ vendor: req.user.userId });
-        const orderCount = await Order.countDocuments({ 'products.vendor': req.user.userId });
-        const totalRevenue = await Order.aggregate([
-            { $unwind: '$products' },
-            { $match: { 'products.vendor': mongoose.Types.ObjectId(req.user.userId) } },
-            { $group: { _id: null, total: { $sum: '$products.price' } } }
-        ]);
+        const products = await Product.find({ vendor: req.user.userId })
+            .sort({ createdAt: -1 });
 
         res.json({
-            products: productCount,
-            orders: orderCount,
-            revenue: totalRevenue[0]?.total || 0
+            success: true,
+            total: products.length,
+            products: products.map(product => ({
+                _id: product._id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                category: product.category,
+                subcategory: product.subcategory,
+                image: product.image,
+                stock: product.stock,
+                createdAt: product.createdAt
+            }))
         });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch vendor stats' });
+        console.error('Error fetching vendor products:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch products'
+        });
+    }
+});
+
+app.get('/api/vendor/stats', authenticateToken, isVendor, async (req, res) => {
+    try {
+        const vendorId = req.user.userId;
+        console.log('Fetching stats for vendor:', vendorId);
+
+        // Fetch total products for this vendor
+        const totalProducts = await Product.countDocuments({ vendor: vendorId });
+        console.log('Product count:', totalProducts);
+
+        // Fetch orders containing products from this vendor
+        const orders = await Order.find({
+            'products.vendor': vendorId
+        });
+        const totalOrders = orders.length;
+        console.log('Order count:', totalOrders);
+
+        // Calculate total revenue from orders containing vendor's products
+        let totalRevenue = 0;
+        orders.forEach(order => {
+            order.products.forEach(product => {
+                if (product.vendor.toString() === vendorId.toString()) {
+                    totalRevenue += product.price * product.quantity;
+                }
+            });
+        });
+        console.log('Revenue:', totalRevenue);
+
+        // Calculate average rating if available
+        const vendor = await Vendor.findOne({ userId: vendorId });
+        const averageRating = vendor?.rating || 0;
+
+        res.json({
+            success: true,
+            vendorStats: {
+                totalProducts,
+                totalOrders,
+                totalRevenue,
+                averageRating
+            }
+        });
+    } catch (error) {
+        console.error('Error in /api/vendor/stats:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch vendor stats',
+            details: error.message 
+        });
     }
 });
 
@@ -665,16 +739,12 @@ app.get('/api/admin/vendors', authenticateToken, isAdmin, async (req, res) => {
             products: vendor.vendorProducts || []
         }));
 
-        // Set JSON content type explicitly
-        res.setHeader('Content-Type', 'application/json');
         res.json({
             success: true,
             vendors: formattedVendors
         });
     } catch (error) {
         console.error('Error fetching vendors:', error);
-        // Set JSON content type explicitly
-        res.setHeader('Content-Type', 'application/json');
         res.status(500).json({
             success: false,
             error: 'Failed to fetch vendors'
@@ -816,6 +886,165 @@ app.get('/api/admin/vendor-orders/:vendorId', authenticateToken, isAdmin, async 
         res.status(500).json({
             success: false,
             error: 'Failed to fetch vendor orders'
+        });
+    }
+});
+
+// Public endpoint to fetch all products (both admin and vendor)
+app.get('/api/products', async (req, res) => {
+    try {
+        const products = await Product.find()
+            .populate('vendor', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            total: products.length,
+            products: products.map(product => ({
+                _id: product._id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                category: product.category,
+                subcategory: product.subcategory,
+                image: product.image,
+                stock: product.stock,
+                vendor: product.vendor,
+                createdAt: product.createdAt
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch products'
+        });
+    }
+});
+
+// Add category routes
+app.post('/api/categories', authenticateToken, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        
+        // Check if category already exists
+        const existingCategory = await Category.findOne({ name });
+        if (existingCategory) {
+            return res.status(400).json({
+                success: false,
+                error: 'Category already exists'
+            });
+        }
+
+        const category = new Category({
+            name,
+            description,
+            subcategories: []
+        });
+
+        await category.save();
+
+        res.status(201).json({
+            success: true,
+            category
+        });
+    } catch (error) {
+        console.error('Error creating category:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to create category'
+        });
+    }
+});
+
+app.post('/api/categories/:categoryId/subcategories', authenticateToken, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const category = await Category.findById(req.params.categoryId);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                error: 'Category not found'
+            });
+        }
+
+        // Check if subcategory already exists
+        const existingSubcategory = category.subcategories.find(sub => sub.name === name);
+        if (existingSubcategory) {
+            return res.status(400).json({
+                success: false,
+                error: 'Subcategory already exists'
+            });
+        }
+
+        category.subcategories.push({ name, description });
+        await category.save();
+
+        res.status(201).json({
+            success: true,
+            category
+        });
+    } catch (error) {
+        console.error('Error adding subcategory:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to add subcategory'
+        });
+    }
+});
+
+app.get('/api/categories', async (req, res) => {
+    try {
+        const categories = await Product.aggregate([
+            {
+                $group: {
+                    _id: '$category',
+                    subcategories: { $addToSet: '$subcategory' }
+                }
+            },
+            {
+                $project: {
+                    name: '$_id',
+                    subcategories: 1,
+                    _id: 0
+                }
+            }
+        ]);
+
+        res.json({
+            success: true,
+            categories: categories.map(cat => ({
+                name: cat.name,
+                subcategories: cat.subcategories.map(sub => ({
+                    name: sub
+                }))
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch categories'
+        });
+    }
+});
+
+app.get('/api/categories/:categoryId/products', async (req, res) => {
+    try {
+        const products = await Product.find({ category: req.params.categoryId })
+            .populate('vendor', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            products
+        });
+    } catch (error) {
+        console.error('Error fetching category products:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch category products'
         });
     }
 });

@@ -222,14 +222,15 @@ document.head.appendChild(style);
 // Add vendor checkbox handler
 document.getElementById('vendorCheckbox')?.addEventListener('change', function() {
     const adminCheckbox = document.getElementById('adminCheckbox');
-    if (this.checked) {
+    if (this.checked && adminCheckbox) {
         adminCheckbox.checked = false;
     }
 });
 
+// Add admin checkbox handler
 document.getElementById('adminCheckbox')?.addEventListener('change', function() {
     const vendorCheckbox = document.getElementById('vendorCheckbox');
-    if (this.checked) {
+    if (this.checked && vendorCheckbox) {
         vendorCheckbox.checked = false;
     }
 }); 

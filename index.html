@@ -523,15 +523,184 @@
         .nav-scroll-right {
             right: 10px;
         }
+
+        /* Category Styles */
+        .category-section {
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .category-button-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .category-button {
+            padding: 10px 20px;
+            background-color: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+
+        .category-button:hover,
+        .category-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .subcategories-dropdown {
+            position: fixed;
+            margin-top: 5px;
+            min-width: 220px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .category-button-wrapper:hover .subcategories-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .subcategory-button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: #374151;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .subcategory-button:hover {
+            background-color: #f3f4f6;
+            color: #3b82f6;
+        }
+
+        .subcategory-button.active {
+            background-color: #ebf5ff;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        /* Product Grid Styles */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-category {
+            font-size: 0.875rem;
+            color: #6B7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #10B981;
+            margin-bottom: 1rem;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #059669;
+        }
+
+        .no-products {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem;
+            color: #6B7280;
+        }
+
+        .no-products i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
     <div class="status-bar"></div>
-    <div id="app" class="app-container"></div>
+    <div id="app" class="app-container">
+        <main class="flex-grow">
+            <!-- Categories Section -->
+            <div class="category-section">
+                <!-- Categories will be loaded dynamically -->
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid">
+                <!-- Products will be loaded dynamically -->
+            </div>
+        </main>
+    </div>
 
     <!-- Scripts -->
     <script src="data.js"></script>
     <script src="auth.js"></script>
     <script src="app.js"></script>
+    <script src="categories.js"></script>
 </body>
 </html>
