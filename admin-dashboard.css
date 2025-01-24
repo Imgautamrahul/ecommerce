@@ -705,7 +705,7 @@ td {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     z-index: 1000;
 }
 
@@ -766,33 +766,108 @@ td {
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #10b981;
+    border-color: #3b82f6;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.form-group .file-upload-container {
+    width: 100%;
+    height: 120px;
+    border: 2px dashed #3b82f6;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: #000000;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.form-group .file-upload-container:hover {
+    border-color: #60a5fa;
+    background-color: #1a1a1a;
+}
+
+.form-group .file-upload-container i {
+    font-size: 24px;
+    color: #3b82f6;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.form-group .file-upload-container:hover i {
+    color: #60a5fa;
+    transform: scale(1.1);
+}
+
+.form-group .file-upload-container span {
+    color: #ffffff;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group .file-upload-container:hover span {
+    color: #60a5fa;
+}
+
+.form-group input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.image-preview {
+    margin-top: 15px;
+    max-width: 200px;
+    max-height: 200px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 2px solid #3b82f6;
+    background-color: #000000;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.cancel-btn,
-.submit-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    gap: 15px;
+    margin-top: 25px;
 }
 
 .cancel-btn {
     background: rgba(255, 255, 255, 0.1);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .submit-btn {
-    background: #10b981;
+    background: #3b82f6;
     color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .cancel-btn:hover {
@@ -800,7 +875,66 @@ td {
 }
 
 .submit-btn:hover {
-    background: #059669;
+    background: #2563eb;
+}
+
+/* CKEditor styles */
+.ck-editor__editable {
+    min-height: 200px;
+    color: white !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.ck.ck-editor__main>.ck-editor__editable {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.ck.ck-editor__main>.ck-editor__editable:focus {
+    border-color: #3b82f6 !important;
+}
+
+.ck.ck-toolbar {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.ck.ck-button,
+.ck.ck-dropdown__button {
+    color: white !important;
+    background: transparent !important;
+}
+
+.ck.ck-button:hover,
+.ck.ck-dropdown__button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ck.ck-toolbar .ck.ck-toolbar__separator {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.ck.ck-dropdown__panel {
+    background: #1f2937 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.ck.ck-list__item {
+    color: white !important;
+}
+
+.ck.ck-list__item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.ck.ck-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+.ck.ck-input:focus {
+    border-color: #3b82f6 !important;
 }
 
 /* Product table styles */
@@ -842,9 +976,4 @@ td {
 .low-stock {
     background: rgba(245, 158, 11, 0.1);
     color: #f59e0b;
-}
-
-.out-of-stock {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
 } 

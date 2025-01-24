@@ -531,23 +531,86 @@ function getStockStatusText(stock) {
     return 'In Stock';
 }
 
-// Modal functions
-function showAddProductModal() {
-    document.getElementById('addProductModal').style.display = 'block';
+// Add CKEditor initialization
+let editor = null;
+
+function initCKEditor() {
+    if (typeof ClassicEditor === 'undefined') {
+        console.error('CKEditor is not loaded');
+        return;
+    }
+
+    // Destroy existing editor if it exists
+    if (editor) {
+        editor.destroy().catch(error => {
+            console.error('Error destroying editor:', error);
+        });
+    }
+
+    // Initialize CKEditor
+    ClassicEditor
+        .create(document.querySelector('#productDescription'), {
+            toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo'],
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                    { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                    { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                ]
+            },
+            placeholder: 'Start typing your product description...'
+        })
+        .then(newEditor => {
+            editor = newEditor;
+        })
+        .catch(error => {
+            console.error('Error initializing CKEditor:', error);
+        });
 }
 
+// Add image preview functionality
+document.getElementById('productImage').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        }
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '';
+    }
+});
+
+// Update the showAddProductModal function
+function showAddProductModal() {
+    document.getElementById('addProductModal').style.display = 'block';
+    initCKEditor();
+}
+
+// Update the closeAddProductModal function
 function closeAddProductModal() {
     document.getElementById('addProductModal').style.display = 'none';
     document.getElementById('addProductForm').reset();
+    document.getElementById('imagePreview').innerHTML = '';
+    if (editor) {
+        editor.setData('');
+    }
 }
 
-// Handle add product form submission
+// Update the handleAddProduct function
 async function handleAddProduct(event) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    const productData = Object.fromEntries(formData);
-
+    
+    // Get the CKEditor content safely
+    const description = editor ? editor.getData() : '';
+    formData.set('description', description);
+    
     try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -555,18 +618,16 @@ async function handleAddProduct(event) {
         }
 
         // Validate required fields
-        if (!productData.category || !productData.subcategory) {
+        if (!formData.get('category') || !formData.get('subcategory')) {
             throw new Error('Category and subcategory are required');
         }
 
         const response = await fetch('http://localhost:5506/api/admin/products', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(productData)
+            body: formData
         });
 
         if (!response.ok) {
