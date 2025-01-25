@@ -193,7 +193,7 @@ function markAllAsRead() {
 // Function to fetch all products (both admin and vendor)
 async function fetchAllProducts() {
     try {
-        const response = await fetch('http://localhost:5506/api/products');
+        const response = await fetch('http://localhost:5000/api/products');
         if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
         return data.products || [];

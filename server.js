@@ -11,7 +11,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['http://127.0.0.1:5506', 'http://localhost:5506'],
+    origin: ['http://127.0.0.1:5000', 'http://localhost:5000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -223,25 +223,47 @@ async function updateAdminStats() {
 // Simplified login route
 app.post('/api/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
         
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and password are required' 
+            });
+        }
+
         // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
         }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
         }
 
-        // Generate token
+        // Check if user has the requested role
+        if (role && user.role !== role) {
+            return res.status(403).json({ 
+                success: false,
+                error: `Access denied. ${role} privileges required.` 
+            });
+        }
+
+        // Generate token with extended expiration for admin
+        const expiresIn = user.role === 'admin' ? '24h' : '12h';
         const token = jwt.sign(
             { userId: user._id, role: user.role },
             process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '24h' }
+            { expiresIn }
         );
 
         // Update last login
@@ -249,6 +271,7 @@ app.post('/api/login', async (req, res) => {
         await user.save();
 
         res.json({
+            success: true,
             token,
             user: {
                 id: user._id,
@@ -259,7 +282,10 @@ app.post('/api/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed. Please try again.' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Login failed. Please try again.' 
+        });
     }
 });
 
@@ -1049,5 +1075,48 @@ app.get('/api/categories/:categoryId/products', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 5506;
+// Admin Routes
+app.get('/api/admin/users', authenticateToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+        }
+
+        const users = await User.find({}, '-password');
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/api/admin/orders', authenticateToken, async (req, res) => {
+    try {
+        // Check if user is admin
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+        }
+
+        const orders = await Order.find()
+            .populate('user', 'name email')
+            .populate('products.product', 'name price');
+
+        const formattedOrders = orders.map(order => ({
+            orderId: order._id,
+            customerName: order.user.name,
+            products: order.products,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            orderDate: order.createdAt
+        }));
+
+        res.json(formattedOrders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 

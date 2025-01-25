@@ -20,6 +20,8 @@ function toggleForms(formType) {
 // Handle admin checkbox
 document.getElementById('adminCheckbox')?.addEventListener('change', function(e) {
     const adminInfo = document.getElementById('adminInfo');
+    if (!adminInfo) return; // Add early return if element doesn't exist
+    
     if (e.target.checked) {
         adminInfo.style.display = 'block';
     } else {
@@ -41,7 +43,7 @@ async function handleSignUp(event) {
     };
     
     try {
-        const response = await fetch('http://localhost:5506/api/register', {
+        const response = await fetch('http://localhost:5000/api/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -92,7 +94,7 @@ async function handleAdminSignIn(event) {
     try {
         console.log('Attempting login with:', data); // Debug log
 
-        const response = await fetch('http://localhost:5506/api/login', {
+        const response = await fetch('http://localhost:5000/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -105,7 +107,8 @@ async function handleAdminSignIn(event) {
 
         if (response.ok) {
             // Store the token and user info
-            localStorage.setItem('token', result.token);
+            localStorage.setItem('adminToken', result.token);
+            localStorage.setItem('adminAuth', 'true');
             localStorage.setItem('userRole', result.user.role);
             localStorage.setItem('userName', result.user.name);
             localStorage.setItem('userEmail', result.user.email);

@@ -81,7 +81,7 @@ window.activeSubcategory = null;
 // Function to fetch categories and subcategories from products
 window.fetchCategories = async function() {
     try {
-        const response = await fetch('http://localhost:5506/api/products');
+        const response = await fetch('http://localhost:5000/api/products');
         if (!response.ok) {
             throw new Error('Failed to fetch products');
         }
