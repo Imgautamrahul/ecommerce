@@ -1,34 +1,5 @@
-// Static data for testing
-const products = [
-    {
-        id: 1,
-        name: "AirPods Pro",
-        price: 24999,
-        category: "Electronics",
-        rating: 4.8,
-        image: "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
-        description: "Experience immersive sound with active noise cancellation.",
-        specs: ["Active Noise Cancellation", "Transparency Mode", "Spatial Audio"],
-        reviews: [
-            { user: "John", rating: 5, comment: "Great product!" }
-        ],
-        stock: 10
-    },
-    {
-        id: 2,
-        name: "MacBook Air",
-        price: 99999,
-        category: "Electronics",
-        rating: 4.9,
-        image: "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/macbook-air-space-gray-select-201810?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1633027804000",
-        description: "Supercharged by M2 chip. The world's thinnest laptop.",
-        specs: ["M2 Chip", "13.6-inch Liquid Retina display", "8GB RAM"],
-        reviews: [
-            { user: "Sarah", rating: 5, comment: "Amazing laptop!" }
-        ],
-        stock: 5
-    }
-];
+// Initialize products array
+let products = [];
 
 // Categories
 const categories = ['All', 'Electronics', 'Fashion', 'Books', 'Home & Kitchen', 'Toys & Games', 'Beauty', 'Sports', 'Vendor'];
@@ -240,3 +211,84 @@ const notifications = [
         color: 'purple'
     }
 ];
+
+// Function to assign MongoDB product data to products array
+async function assignMongoProducts(mongoProducts) {
+    products = mongoProducts.map(product => ({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        subcategory: product.subcategory,
+        description: product.description,
+        image: product.image,
+        stock: product.stock || 0,
+        rating: product.rating || 0,
+        reviews: product.reviews || [],
+        specifications: product.specifications || {},
+        additionalInfo: product.additionalInfo || {},
+        status: product.status,
+        vendor: product.vendor,
+        ...product // Spread operator to include any additional fields
+    }));
+    return products;
+}
+
+// Function to fetch products from MongoDB
+async function fetchMongoProducts() {
+    try {
+        const response = await fetch('http://localhost:5000/api/products');
+        if (!response.ok) {
+            throw new Error('Failed to fetch products');
+        }
+        const data = await response.json();
+        return await assignMongoProducts(data.products);
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        // Fallback to sample data if fetch fails
+        products = [
+            {
+                _id: "1",
+                name: "AirPods Pro",
+                price: 24999,
+                category: "Electronics",
+                rating: 4.8,
+                image: "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
+                description: "Experience immersive sound with active noise cancellation.",
+                specifications: {
+                    "Noise Cancellation": "Active",
+                    "Mode": "Transparency",
+                    "Audio": "Spatial"
+                },
+                reviews: [
+                    { user: "John", rating: 5, comment: "Great product!" }
+                ],
+                stock: 10
+            },
+            {
+                _id: "2",
+                name: "MacBook Air",
+                price: 99999,
+                category: "Electronics",
+                rating: 4.9,
+                image: "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/macbook-air-space-gray-select-201810?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1633027804000",
+                description: "Supercharged by M2 chip. The world's thinnest laptop.",
+                specifications: {
+                    "Chip": "M2",
+                    "Display": "13.6-inch Liquid Retina",
+                    "RAM": "8GB"
+                },
+                reviews: [
+                    { user: "Sarah", rating: 5, comment: "Amazing laptop!" }
+                ],
+                stock: 5
+            }
+        ];
+        return products;
+    }
+}
+
+// Export for use in other files
+window.products = products;
+window.fetchMongoProducts = fetchMongoProducts;
+window.assignMongoProducts = assignMongoProducts;

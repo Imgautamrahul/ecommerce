@@ -1517,9 +1517,9 @@ async function loadSubcategories(categoryName) {
     }
 
     try {
-        const response = await fetch(`http://localhost:5506/api/admin/products?category=${categoryName}`, {
+        const response = await fetch(`http://localhost:5000/api/admin/products?category=${categoryName}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -1685,15 +1685,20 @@ function viewProduct(productId) {
     document.body.appendChild(modal);
 
     // Fetch and display product details
-    fetch('http://localhost:5506/api/admin/products', {
+    fetch(`http://localhost:5000/api/admin/products/${productId}`, {
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
             'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Failed to fetch product: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        const product = data.products.find(p => p._id === productId);
+        const product = data.product;
         if (!product) {
             throw new Error('Product not found');
         }
@@ -1714,12 +1719,8 @@ function viewProduct(productId) {
                         <p><strong>Subcategory:</strong> ${product.subcategory || 'N/A'}</p>
                         <p><strong>Price:</strong> ₹${product.price}</p>
                         <p><strong>Stock:</strong> ${product.stock || 0}</p>
-                        <p><strong>Status:</strong> ${product.status}</p>
-                        <p><strong>Added By:</strong> ${product.addedBy}</p>
-                        <div class="description">
-                            <strong>Description:</strong>
-                            <div class="description-content">${product.description}</div>
-                        </div>
+                        <p><strong>Description:</strong></p>
+                        <div class="description-content">${product.description}</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1735,124 +1736,160 @@ function viewProduct(productId) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('Failed to load product details', 'error');
+        showNotification('Failed to load product details: ' + error.message, 'error');
         modal.remove();
     });
 }
 
 async function editProduct(productId) {
-    console.log('Edit product function called with ID:', productId);
     try {
-        const token = localStorage.getItem('token');
+        console.log('Edit product function called with ID:', productId);
+        console.log('Fetching product details...');
+        
+        // Get the admin token
+        const token = localStorage.getItem('adminToken');
         if (!token) {
-            throw new Error('No authentication token found');
+            showNotification('Authentication required', 'error');
+            return;
         }
 
-        // Fetch all products
-        console.log('Fetching all products...');
-        const response = await fetch('http://localhost:5506/api/admin/products', {
+        // Fetch product details
+        const response = await fetch(`http://localhost:5000/api/admin/products/${productId}`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${token}`
             }
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch products');
+            throw new Error(`Failed to fetch product: ${response.statusText}`);
         }
 
         const data = await response.json();
-        const product = data.products.find(p => p._id === productId);
-        
-        if (!product) {
-            throw new Error('Product not found');
+        if (!data.success || !data.product) {
+            throw new Error('Failed to get product details');
         }
-
-        // Show edit modal
+        
+        const product = data.product;
+        
+        // Get the modal and form elements
         const modal = document.getElementById('addProductModal');
         const form = document.getElementById('addProductForm');
         
+        if (!modal || !form) {
+            showNotification('Required elements not found', 'error');
+            return;
+        }
+
         // Update modal title
         modal.querySelector('.modal-header h2').textContent = 'Edit Product';
         
-        // Fill form with product details
-        form.querySelector('#productName').value = product.name;
-        form.querySelector('#productPrice').value = product.price;
-        form.querySelector('#productQuantity').value = product.stock || 0;
+        // Fill form with product data
+        form.querySelector('input[name="name"]').value = product.name;
+        form.querySelector('input[name="price"]').value = product.price;
+        form.querySelector('input[name="quantity"]').value = product.stock;
+        form.querySelector('textarea[name="description"]').value = product.description;
         
-        // Set category and load subcategories
-        const categorySelect = form.querySelector('#productCategory');
+        // Set category and trigger subcategory load
+        const categorySelect = form.querySelector('select[name="category"]');
         categorySelect.value = product.category;
         await loadSubcategories(product.category);
         
-        // Set subcategory after loading subcategories
-        const subcategorySelect = form.querySelector('#productSubcategory');
-        subcategorySelect.value = product.subcategory || '';
-
-        // Set description in CKEditor
-        if (editor) {
-            editor.setData(product.description);
-        }
-
+        // Set subcategory after categories are loaded
+        const subcategorySelect = form.querySelector('select[name="subcategory"]');
+        subcategorySelect.value = product.subcategory;
+        
         // Show current image
         const imagePreview = document.getElementById('imagePreview');
-        imagePreview.innerHTML = `<img src="${product.image}" alt="Current Image">`;
-
+        if (imagePreview) {
+            imagePreview.innerHTML = `
+                <div class="current-image">
+                    <img src="${product.image}" alt="Current product image" style="max-width: 200px;">
+                    <p>Current image</p>
+                </div>
+            `;
+        }
+        
         // Update form submission handler
         form.onsubmit = (e) => handleEditProduct(e, productId);
-
+        
+        // Update button text
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Product';
+        }
+        
         // Show modal
         modal.style.display = 'block';
-        initCKEditor();
-        console.log('Edit modal created and displayed');
-
+        
     } catch (error) {
         console.error('Error in editProduct:', error);
-        showNotification(error.message, 'error');
+        showNotification(error.message || 'Failed to edit product', 'error');
     }
 }
 
+// Update handleEditProduct function
 async function handleEditProduct(event, productId) {
     event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
     
     try {
-        const token = localStorage.getItem('token');
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        // Get the admin token
+        const token = localStorage.getItem('adminToken');
         if (!token) {
-            throw new Error('No authentication token found');
+            showNotification('Authentication required', 'error');
+            return;
         }
 
-        // Get the CKEditor content
-        const description = editor ? editor.getData() : '';
-        formData.set('description', description);
+        // Prepare the product data
+        const productData = {
+            name: formData.get('name'),
+            price: parseFloat(formData.get('price')),
+            stock: parseInt(formData.get('quantity')),
+            category: formData.get('category'),
+            subcategory: formData.get('subcategory'),
+            description: formData.get('description')
+        };
 
-        const response = await fetch(`http://localhost:5506/api/admin/products/${productId}`, {
+        // Handle image upload if a new image is selected
+        const imageFile = formData.get('image');
+        if (imageFile && imageFile.size > 0) {
+            // Here you would typically upload the image to your server or a cloud storage
+            // and get back the URL. For now, we'll just keep the existing image.
+            productData.image = imageFile;
+        }
+
+        // Send update request
+        const response = await fetch(`http://localhost:5000/api/admin/products/${productId}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(productData)
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to update product');
+            throw new Error(errorData.error || `Failed to update product: ${response.statusText}`);
         }
 
-        showNotification('Product updated successfully!', 'success');
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to update product');
+        }
+
+        // Show success message
+        showNotification(data.message || 'Product updated successfully', 'success');
+        
+        // Close modal and refresh product list
         closeAddProductModal();
-        await fetchAndDisplayProducts();
-        
-        // Reset form submission handler
-        form.onsubmit = (e) => handleAddProduct(e);
-        
-        // Reset modal title
-        document.querySelector('#addProductModal .modal-header h2').textContent = 'Add New Product';
+        showProducts();
         
     } catch (error) {
-        console.error('Error in handleEditProduct:', error);
-        showNotification(error.message, 'error');
+        console.error('Error updating product:', error);
+        showNotification(error.message || 'Failed to update product', 'error');
     }
 }
 

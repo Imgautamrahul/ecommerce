@@ -543,6 +543,70 @@ app.post('/api/admin/products', authenticateToken, isAdmin, async (req, res) => 
     }
 });
 
+// Get single product route
+app.get('/api/admin/products/:id', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Product not found'
+            });
+        }
+        res.json({
+            success: true,
+            product
+        });
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch product'
+        });
+    }
+});
+
+// Update product route
+app.put('/api/admin/products/:id', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { name, price, stock, category, subcategory, description, image } = req.body;
+        
+        // Find and update the product
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            {
+                name,
+                price,
+                stock,
+                category,
+                subcategory,
+                description,
+                ...(image && { image }) // Only update image if provided
+            },
+            { new: true } // Return updated product
+        );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                error: 'Product not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Product updated successfully',
+            product
+        });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update product'
+        });
+    }
+});
+
 // Add vendor middleware
 const isVendor = (req, res, next) => {
     if (req.user.role !== 'vendor') {

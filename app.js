@@ -205,331 +205,342 @@ async function fetchAllProducts() {
 
 // Modified renderHome function
 async function renderHome() {
-    // Fetch all products
-    const allProducts = await fetchAllProducts();
-    
-    // Map products to the expected format
-    const formattedProducts = allProducts.map(p => ({
-        ...p,
-        id: p._id, // Convert _id to id for compatibility
-        rating: p.rating || 4.5,
-        reviews: p.reviews || [],
-        specs: p.specs || [],
-        available: p.stock > 0
-    }));
+    try {
+        // Fetch products from MongoDB
+        const loadedProducts = await fetchMongoProducts();
+        
+        // Map products to the expected format
+        const formattedProducts = loadedProducts.map(p => ({
+            ...p,
+            rating: p.rating || 0,
+            reviews: p.reviews || [],
+            specifications: p.specifications || {},
+            additionalInfo: p.additionalInfo || {},
+            available: p.stock > 0
+        }));
 
-    app.innerHTML = `
-        <div class="pb-16">
-            <!-- Top Background Image -->
-            <div class="top-background"></div>
+        app.innerHTML = `
+            <div class="pb-16">
+                <!-- Top Background Image -->
+                <div class="top-background"></div>
 
-            <div class="content-container pb-16">
-                <!-- Header -->
-                <div class="bg-white sticky top-0 z-10 shadow-sm">
-                    <div class="flex items-center justify-between p-4">
-                        <h1 class="text-xl font-bold">Home</h1>
-                        <div class="flex items-center gap-4">
-                            <!-- Profile Button -->
-                            <button onclick="openProfile()" class="relative">
-                                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors">
-                                    <i class="fas fa-user text-gray-600"></i>
+                <div class="content-container pb-16">
+                    <!-- Header -->
+                    <div class="bg-white sticky top-0 z-10 shadow-sm">
+                        <div class="flex items-center justify-between p-4">
+                            <h1 class="text-xl font-bold">Home</h1>
+                            <div class="flex items-center gap-4">
+                                <!-- Profile Button -->
+                                <button onclick="openProfile()" class="relative">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                </button>
+                                <!-- Theme Toggle Switch -->
+                                <div class="theme-switch-wrapper">
+                                    <i class="fas fa-sun"></i>
+                                    <label class="theme-switch">
+                                        <input type="checkbox" id="themeSwitch" onchange="handleThemeChange(this)">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <i class="fas fa-moon"></i>
                                 </div>
-                            </button>
-                            <!-- Theme Toggle Switch -->
-                            <div class="theme-switch-wrapper">
-                                <i class="fas fa-sun"></i>
-                                <label class="theme-switch">
-                                    <input type="checkbox" id="themeSwitch" onchange="handleThemeChange(this)">
-                                    <span class="slider"></span>
-                                </label>
-                                <i class="fas fa-moon"></i>
+                                <button onclick="navigate('wishlist')" class="relative">
+                                    <i class="fas fa-heart text-gray-600"></i>
+                                    ${wishlist.length > 0 ? `
+                                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    ` : ''}
+                                </button>
+                                <button onclick="navigate('notifications')" class="relative">
+                                    <i class="fas fa-bell text-gray-600"></i>
+                                    ${notifications.some(n => !n.isRead) ? `
+                                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    ` : ''}
+                                </button>
+                                <button onclick="navigate('cart')" class="relative">
+                                    <i class="fas fa-shopping-cart text-gray-600"></i>
+                                    ${cart.length > 0 ? `
+                                        <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    ` : ''}
+                                </button>
                             </div>
-                            <button onclick="navigate('wishlist')" class="relative">
-                                <i class="fas fa-heart text-gray-600"></i>
-                                ${wishlist.length > 0 ? `
-                                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                ` : ''}
-                            </button>
-                            <button onclick="navigate('notifications')" class="relative">
-                                <i class="fas fa-bell text-gray-600"></i>
-                                ${notifications.some(n => !n.isRead) ? `
-                                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                ` : ''}
-                            </button>
-                            <button onclick="navigate('cart')" class="relative">
-                                <i class="fas fa-shopping-cart text-gray-600"></i>
-                                ${cart.length > 0 ? `
-                                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                ` : ''}
-                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Secondary Navigation -->
-                <div class="bg-gray-800">
-                    <button class="nav-scroll-button nav-scroll-left" onclick="scrollNavLeft()">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div class="nav-container" id="navContainer">
-                        <div class="nav-buttons">
-                            <button class="nav-button" onclick="navigate('all')">
-                                <i class="fas fa-bars mr-2"></i>All
-                            </button>
-                            <button class="nav-button" onclick="navigate('deals')">Today's Deals</button>
-                            <button class="nav-button" onclick="navigate('customer-service')">Customer Service</button>
-                            <button class="nav-button" onclick="navigate('registry')">Registry</button>
-                            <button class="nav-button" onclick="navigate('gift-cards')">Gift Cards</button>
-                            <button class="nav-button" onclick="navigate('sell')">Sell</button>
-                            <button class="nav-button" onclick="navigate('electronics')">Electronics</button>
-                            <button class="nav-button" onclick="navigate('fashion')">Fashion</button>
-                            <button class="nav-button" onclick="navigate('home-kitchen')">Home & Kitchen</button>
-                            <button class="nav-button" onclick="navigate('books')">Books</button>
-                            <button class="nav-button" onclick="navigate('computers')">Computers</button>
-                            <button class="nav-button" onclick="navigate('toys')">Toys & Games</button>
-                            <button class="nav-button" onclick="navigate('beauty')">Beauty & Personal Care</button>
-                            <button class="nav-button" onclick="navigate('sports')">Sports & Fitness</button>
-                            <button class="nav-button" onclick="navigate('automotive')">Automotive</button>
-                            <button class="nav-button" onclick="navigate('health')">Health & Household</button>
+                    <!-- Secondary Navigation -->
+                    <div class="bg-gray-800">
+                        <button class="nav-scroll-button nav-scroll-left" onclick="scrollNavLeft()">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="nav-container" id="navContainer">
+                            <div class="nav-buttons">
+                                <button class="nav-button" onclick="navigate('all')">
+                                    <i class="fas fa-bars mr-2"></i>All
+                                </button>
+                                <button class="nav-button" onclick="navigate('deals')">Today's Deals</button>
+                                <button class="nav-button" onclick="navigate('customer-service')">Customer Service</button>
+                                <button class="nav-button" onclick="navigate('registry')">Registry</button>
+                                <button class="nav-button" onclick="navigate('gift-cards')">Gift Cards</button>
+                                <button class="nav-button" onclick="navigate('sell')">Sell</button>
+                                <button class="nav-button" onclick="navigate('electronics')">Electronics</button>
+                                <button class="nav-button" onclick="navigate('fashion')">Fashion</button>
+                                <button class="nav-button" onclick="navigate('home-kitchen')">Home & Kitchen</button>
+                                <button class="nav-button" onclick="navigate('books')">Books</button>
+                                <button class="nav-button" onclick="navigate('computers')">Computers</button>
+                                <button class="nav-button" onclick="navigate('toys')">Toys & Games</button>
+                                <button class="nav-button" onclick="navigate('beauty')">Beauty & Personal Care</button>
+                                <button class="nav-button" onclick="navigate('sports')">Sports & Fitness</button>
+                                <button class="nav-button" onclick="navigate('automotive')">Automotive</button>
+                                <button class="nav-button" onclick="navigate('health')">Health & Household</button>
+                            </div>
+                        </div>
+                        <button class="nav-scroll-button nav-scroll-right" onclick="scrollNavRight()">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Prime Day Banner (optional) -->
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2 text-center">
+                        <p class="text-sm font-medium">
+                            <i class="fas fa-bolt mr-2"></i>
+                            Flash Deals | Up to 70% off on premium brands
+                            <a href="#" class="underline ml-2">Shop Now</a>
+                        </p>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="p-4">
+                        <div class="relative" onclick="navigate('search')">
+                            <input type="text" 
+                                   placeholder="Search products..." 
+                                   class="w-full p-3 rounded-lg bg-white shadow-md focus:outline-none"
+                                   readonly>
+                            <span class="absolute right-4 top-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
                         </div>
                     </div>
-                    <button class="nav-scroll-button nav-scroll-right" onclick="scrollNavRight()">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
 
-                <!-- Prime Day Banner (optional) -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2 text-center">
-                    <p class="text-sm font-medium">
-                        <i class="fas fa-bolt mr-2"></i>
-                        Flash Deals | Up to 70% off on premium brands
-                        <a href="#" class="underline ml-2">Shop Now</a>
-                    </p>
-                </div>
-
-                <!-- Search Bar -->
-                <div class="p-4">
-                    <div class="relative" onclick="navigate('search')">
-                        <input type="text" 
-                               placeholder="Search products..." 
-                               class="w-full p-3 rounded-lg bg-white shadow-md focus:outline-none"
-                               readonly>
-                        <span class="absolute right-4 top-3">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Promotions Carousel -->
-                <div class="px-4 mb-6">
-                    <h2 class="offers-title mb-4">Special Offers</h2>
-                    <div class="scroll-container">
-                        <div class="scroll-wrapper">
-                            ${[...promotions, ...promotions].map(promo => `
-                                <div class="flex-shrink-0 w-[300px] h-[160px] rounded-lg overflow-hidden relative bg-gradient-to-r ${promo.backgroundColor}">
-                                    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
-                                    <div class="relative p-6 flex flex-col justify-between h-full">
-                                        <div>
-                                            <h3 class="text-white text-xl font-bold mb-2">${promo.title}</h3>
-                                            <p class="text-white text-3xl font-bold mb-2">${promo.discount}</p>
-                                        </div>
-                                        <div class="flex justify-between items-center">
+                    <!-- Promotions Carousel -->
+                    <div class="px-4 mb-6">
+                        <h2 class="offers-title mb-4">Special Offers</h2>
+                        <div class="scroll-container">
+                            <div class="scroll-wrapper">
+                                ${[...promotions, ...promotions].map(promo => `
+                                    <div class="flex-shrink-0 w-[300px] h-[160px] rounded-lg overflow-hidden relative bg-gradient-to-r ${promo.backgroundColor}">
+                                        <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                                        <div class="relative p-6 flex flex-col justify-between h-full">
                                             <div>
-                                                <span class="text-white text-sm">Use code:</span>
-                                                <span class="text-white font-bold">${promo.code}</span>
+                                                <h3 class="text-white text-xl font-bold mb-2">${promo.title}</h3>
+                                                <p class="text-white text-3xl font-bold mb-2">${promo.discount}</p>
                                             </div>
-                                            <button onclick="copyPromoCode('${promo.code}')" 
-                                                    class="bg-white text-primary px-4 py-2 rounded-full text-sm font-bold hover:bg-opacity-90 transition-colors">
-                                                Copy
-                                            </button>
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <span class="text-white text-sm">Use code:</span>
+                                                    <span class="text-white font-bold">${promo.code}</span>
+                                                </div>
+                                                <button onclick="copyPromoCode('${promo.code}')" 
+                                                        class="bg-white text-primary px-4 py-2 rounded-full text-sm font-bold hover:bg-opacity-90 transition-colors">
+                                                    Copy
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            `).join('')}
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Bank Offers -->
-                <div class="px-4 mb-6">
-                    <h2 class="offers-title mb-4">Bank Offers</h2>
-                    <div class="scroll-container">
-                        <div class="scroll-wrapper">
-                            ${[...bankOffers, ...bankOffers].map(offer => `
-                                <div class="flex-shrink-0 w-[300px] rounded-lg overflow-hidden relative bg-gradient-to-r ${offer.backgroundColor}">
-                                    <div class="relative p-6">
-                                        <div class="flex items-center mb-3">
-                                            <div class="w-12 h-12 bg-white rounded-lg p-2 mr-3">
-                                                <img src="${offer.image}" alt="${offer.bank}" class="w-full h-full object-contain">
+                    <!-- Bank Offers -->
+                    <div class="px-4 mb-6">
+                        <h2 class="offers-title mb-4">Bank Offers</h2>
+                        <div class="scroll-container">
+                            <div class="scroll-wrapper">
+                                ${[...bankOffers, ...bankOffers].map(offer => `
+                                    <div class="flex-shrink-0 w-[300px] rounded-lg overflow-hidden relative bg-gradient-to-r ${offer.backgroundColor}">
+                                        <div class="relative p-6">
+                                            <div class="flex items-center mb-3">
+                                                <div class="w-12 h-12 bg-white rounded-lg p-2 mr-3">
+                                                    <img src="${offer.image}" alt="${offer.bank}" class="w-full h-full object-contain">
+                                                </div>
+                                                <h3 class="text-white font-semibold">${offer.bank}</h3>
                                             </div>
-                                            <h3 class="text-white font-semibold">${offer.bank}</h3>
-                                        </div>
-                                        <p class="text-xl font-bold text-white mb-2">${offer.offer}</p>
-                                        <div class="flex justify-between items-end">
-                                            <div>
-                                                <p class="text-white text-sm opacity-90">Min. Purchase: ₹${offer.minPurchase}</p>
-                                                <p class="text-white text-xs opacity-75 mt-1">Valid till ${new Date(offer.validUntil).toLocaleDateString()}</p>
+                                            <p class="text-xl font-bold text-white mb-2">${offer.offer}</p>
+                                            <div class="flex justify-between items-end">
+                                                <div>
+                                                    <p class="text-white text-sm opacity-90">Min. Purchase: ₹${offer.minPurchase}</p>
+                                                    <p class="text-white text-xs opacity-75 mt-1">Valid till ${new Date(offer.validUntil).toLocaleDateString()}</p>
+                                                </div>
+                                                <button class="bg-white text-primary px-4 py-2 rounded-full text-sm font-bold hover:bg-opacity-90 transition-colors">
+                                                    Apply
+                                                </button>
                                             </div>
-                                            <button class="bg-white text-primary px-4 py-2 rounded-full text-sm font-bold hover:bg-opacity-90 transition-colors">
-                                                Apply
-                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                            `).join('')}
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Categories -->
-                <div class="category-section">
-                    <div class="category-container px-4 mb-6">
-                        <!-- Categories will be loaded dynamically -->
+                    <!-- Categories -->
+                    <div class="category-section">
+                        <div class="category-container px-4 mb-6">
+                            <!-- Categories will be loaded dynamically -->
+                        </div>
                     </div>
-                </div>
 
-                <!-- Products Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 mb-20">
-                    ${formattedProducts.map(product => `
-                        <div class="product-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer" 
-                             onclick="showProductDetails(${JSON.stringify(product).replace(/"/g, '&quot;')})">
-                            <div class="relative">
-                                <img src="${product.image}" 
-                                     alt="${product.name}" 
-                                     class="w-full h-48 sm:h-40 object-contain p-4">
-                                <button onclick="event.stopPropagation(); toggleWishlist(${product.id})" 
-                                        class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
-                                    <i class="fas fa-heart ${wishlist.includes(product.id) ? 'text-red-500' : 'text-gray-400'}"></i>
-                                </button>
-                            </div>
-                            <div class="p-4">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-green-500 font-medium">₹${product.price}</span>
-                                    <div class="flex items-center">
-                                        <span class="text-sm mr-1">${product.rating}</span>
-                                        <i class="fas fa-star text-yellow-400 text-sm"></i>
+                    <!-- Products Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 mb-20">
+                        ${formattedProducts.map(product => `
+                            <div class="product-card bg-white rounded-lg shadow-md overflow-hidden cursor-pointer" 
+                                 onclick="showProductDetails(${JSON.stringify(product).replace(/"/g, '&quot;')})">
+                                <div class="relative">
+                                    <img src="${product.image}" 
+                                         alt="${product.name}" 
+                                         class="w-full h-48 sm:h-40 object-contain p-4">
+                                    <button onclick="event.stopPropagation(); toggleWishlist('${product._id}')" 
+                                            class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white shadow flex items-center justify-center">
+                                        <i class="fas fa-heart ${wishlist.includes(product._id) ? 'text-red-500' : 'text-gray-300'}"></i>
+                                    </button>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
+                                    <div class="flex items-center mb-2">
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold mr-1">${product.rating}</span>
+                                            <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                        </div>
+                                        <span class="text-gray-500 text-sm ml-2">${product.reviews ? product.reviews.length : 0} reviews</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xl font-bold">₹${product.price}</span>
+                                        <button onclick="event.stopPropagation(); addToCart('${product._id}')" 
+                                                class="bg-green-500 text-white px-3 py-1 rounded-full text-sm hover:bg-green-600 transition-colors">
+                                            Add to Cart
+                                        </button>
                                     </div>
                                 </div>
-                                <h3 class="font-medium text-gray-800 mb-2 truncate">${product.name}</h3>
-                                <p class="text-gray-500 text-sm truncate">${product.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="text-white mt-16">
+                        <!-- Back to top button -->
+                        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+                                class="w-full bg-[#37475A] hover:bg-[#485769] py-3.5 text-sm text-center">
+                            Back to top
+                        </button>
+
+                        <!-- Main Footer Content -->
+                        <div class="bg-[#232F3E]">
+                            <div class="container mx-auto py-8">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+                                    <div>
+                                        <h3 class="font-bold mb-3">Get to Know Us</h3>
+                                        <ul class="space-y-2 text-[14px] text-[#DDD]">
+                                            <li><a href="#" class="hover:underline">About Us</a></li>
+                                            <li><a href="#" class="hover:underline">Careers</a></li>
+                                            <li><a href="#" class="hover:underline">Press Releases</a></li>
+                                            <li><a href="#" class="hover:underline">Our Science</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h3 class="font-bold mb-3">Connect with Us</h3>
+                                        <ul class="space-y-2 text-[14px] text-[#DDD]">
+                                            <li><a href="#" class="hover:underline">Facebook</a></li>
+                                            <li><a href="#" class="hover:underline">Twitter</a></li>
+                                            <li><a href="#" class="hover:underline">Instagram</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h3 class="font-bold mb-3">Make Money with Us</h3>
+                                        <ul class="space-y-2 text-[14px] text-[#DDD]">
+                                            <li><a href="#" class="hover:underline">Sell on Shop</a></li>
+                                            <li><a href="#" class="hover:underline">Sell under Shop Accelerator</a></li>
+                                            <li><a href="#" class="hover:underline">Protect and Build Your Brand</a></li>
+                                            <li><a href="#" class="hover:underline">Global Selling</a></li>
+                                            <li><a href="#" class="hover:underline">Become an Affiliate</a></li>
+                                            <li><a href="#" class="hover:underline">Fulfilment by Shop</a></li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h3 class="font-bold mb-3">Let Us Help You</h3>
+                                        <ul class="space-y-2 text-[14px] text-[#DDD]">
+                                            <li><a href="#" class="hover:underline">COVID-19 and Shop</a></li>
+                                            <li><a href="#" class="hover:underline">Your Account</a></li>
+                                            <li><a href="#" class="hover:underline">Returns Centre</a></li>
+                                            <li><a href="#" class="hover:underline">100% Purchase Protection</a></li>
+                                            <li><a href="#" class="hover:underline">Help</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    `).join('')}
+
+                        <!-- Language and Region Selection -->
+                        <div class="bg-[#232F3E] border-t border-[#3a4553] pt-8 pb-4">
+                            <div class="container mx-auto px-4">
+                                <div class="flex flex-wrap justify-center gap-4">
+                                    <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
+                                        <i class="fas fa-globe mr-2"></i>English
+                                    </button>
+                                    <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
+                                        <i class="fas fa-rupee-sign mr-2"></i>INR - Indian Rupee
+                                    </button>
+                                    <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
+                                        <i class="fas fa-map-marker-alt mr-2"></i>India
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Footer -->
+                        <div class="bg-[#131A22] py-8">
+                            <div class="container mx-auto px-4">
+                                <!-- Services Grid -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-6 max-w-6xl mx-auto text-center mb-6">
+                                    <a href="#" class="text-[#DDD] hover:underline">
+                                        <p class="text-[11px]">
+                                            <span class="font-bold block mb-1">AbeBooks</span>
+                                            <span class="text-[#999]">Books, art<br/>& collectibles</span>
+                                        </p>
+                                    </a>
+                                    <a href="#" class="text-[#DDD] hover:underline">
+                                        <p class="text-[11px]">
+                                            <span class="font-bold block mb-1">Shopbop</span>
+                                            <span class="text-[#999]">Designer<br/>Fashion Brands</span>
+                                        </p>
+                                    </a>
+                                    <!-- Add more service links as needed -->
+                                </div>
+
+                                <!-- Copyright -->
+                                <div class="text-center text-[12px] text-[#DDD] space-y-2">
+                                    <div class="flex flex-wrap justify-center gap-4 text-[11px]">
+                                        <a href="#" class="hover:underline">Conditions of Use & Sale</a>
+                                        <a href="#" class="hover:underline">Privacy Notice</a>
+                                        <a href="#" class="hover:underline">Interest-Based Ads</a>
+                                    </div>
+                                    <p class="text-[#999]">© 1996-${new Date().getFullYear()}, Shop.com, Inc. or its affiliates</p>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
 
-                <!-- Footer -->
-                <footer class="text-white mt-16">
-                    <!-- Back to top button -->
-                    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-                            class="w-full bg-[#37475A] hover:bg-[#485769] py-3.5 text-sm text-center">
-                        Back to top
-                    </button>
-
-                    <!-- Main Footer Content -->
-                    <div class="bg-[#232F3E]">
-                        <div class="container mx-auto py-8">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
-                                <div>
-                                    <h3 class="font-bold mb-3">Get to Know Us</h3>
-                                    <ul class="space-y-2 text-[14px] text-[#DDD]">
-                                        <li><a href="#" class="hover:underline">About Us</a></li>
-                                        <li><a href="#" class="hover:underline">Careers</a></li>
-                                        <li><a href="#" class="hover:underline">Press Releases</a></li>
-                                        <li><a href="#" class="hover:underline">Our Science</a></li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h3 class="font-bold mb-3">Connect with Us</h3>
-                                    <ul class="space-y-2 text-[14px] text-[#DDD]">
-                                        <li><a href="#" class="hover:underline">Facebook</a></li>
-                                        <li><a href="#" class="hover:underline">Twitter</a></li>
-                                        <li><a href="#" class="hover:underline">Instagram</a></li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h3 class="font-bold mb-3">Make Money with Us</h3>
-                                    <ul class="space-y-2 text-[14px] text-[#DDD]">
-                                        <li><a href="#" class="hover:underline">Sell on Shop</a></li>
-                                        <li><a href="#" class="hover:underline">Sell under Shop Accelerator</a></li>
-                                        <li><a href="#" class="hover:underline">Protect and Build Your Brand</a></li>
-                                        <li><a href="#" class="hover:underline">Global Selling</a></li>
-                                        <li><a href="#" class="hover:underline">Become an Affiliate</a></li>
-                                        <li><a href="#" class="hover:underline">Fulfilment by Shop</a></li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h3 class="font-bold mb-3">Let Us Help You</h3>
-                                    <ul class="space-y-2 text-[14px] text-[#DDD]">
-                                        <li><a href="#" class="hover:underline">COVID-19 and Shop</a></li>
-                                        <li><a href="#" class="hover:underline">Your Account</a></li>
-                                        <li><a href="#" class="hover:underline">Returns Centre</a></li>
-                                        <li><a href="#" class="hover:underline">100% Purchase Protection</a></li>
-                                        <li><a href="#" class="hover:underline">Help</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Language and Region Selection -->
-                    <div class="bg-[#232F3E] border-t border-[#3a4553] pt-8 pb-4">
-                        <div class="container mx-auto px-4">
-                            <div class="flex flex-wrap justify-center gap-4">
-                                <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
-                                    <i class="fas fa-globe mr-2"></i>English
-                                </button>
-                                <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
-                                    <i class="fas fa-rupee-sign mr-2"></i>INR - Indian Rupee
-                                </button>
-                                <button class="border border-[#848688] rounded px-3 py-2 text-sm hover:border-white">
-                                    <i class="fas fa-map-marker-alt mr-2"></i>India
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bottom Footer -->
-                    <div class="bg-[#131A22] py-8">
-                        <div class="container mx-auto px-4">
-                            <!-- Services Grid -->
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-6 max-w-6xl mx-auto text-center mb-6">
-                                <a href="#" class="text-[#DDD] hover:underline">
-                                    <p class="text-[11px]">
-                                        <span class="font-bold block mb-1">AbeBooks</span>
-                                        <span class="text-[#999]">Books, art<br/>& collectibles</span>
-                                    </p>
-                                </a>
-                                <a href="#" class="text-[#DDD] hover:underline">
-                                    <p class="text-[11px]">
-                                        <span class="font-bold block mb-1">Shopbop</span>
-                                        <span class="text-[#999]">Designer<br/>Fashion Brands</span>
-                                    </p>
-                                </a>
-                                <!-- Add more service links as needed -->
-                            </div>
-
-                            <!-- Copyright -->
-                            <div class="text-center text-[12px] text-[#DDD] space-y-2">
-                                <div class="flex flex-wrap justify-center gap-4 text-[11px]">
-                                    <a href="#" class="hover:underline">Conditions of Use & Sale</a>
-                                    <a href="#" class="hover:underline">Privacy Notice</a>
-                                    <a href="#" class="hover:underline">Interest-Based Ads</a>
-                                </div>
-                                <p class="text-[#999]">© 1996-${new Date().getFullYear()}, Shop.com, Inc. or its affiliates</p>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+                ${renderBottomNav()}
             </div>
 
             ${renderBottomNav()}
-        </div>
-
-        ${renderBottomNav()}
-    `;
+        `;
+    } catch (error) {
+        console.error('Error rendering home:', error);
+        showToast('Failed to load products');
+    }
     
     // Initialize theme after rendering
     initTheme();
@@ -641,7 +652,7 @@ function renderProductDetail() {
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-3">Specifications</h3>
                     <ul class="space-y-2">
-                        ${selectedProduct.specs.map(spec => `
+                        ${selectedProduct.specifications.map(spec => `
                             <li class="flex items-center">
                                 <i class="fas fa-check text-green-500 mr-2"></i>
                                 ${spec}
@@ -649,6 +660,46 @@ function renderProductDetail() {
                         `).join('')}
                     </ul>
                 </div>
+
+                <!-- Additional Information -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Additional Information</h3>
+                    <ul class="space-y-2">
+                        ${Object.entries(selectedProduct.additionalInfo).map(([key, value]) => `
+                            <li class="flex items-center gap-2">
+                                <i class="fas fa-check text-green-500"></i>
+                                <span class="font-medium">${key.replace(/_/g, ' ')}:</span> ${value}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+
+                <!-- Reviews Section -->
+                ${selectedProduct.reviews && selectedProduct.reviews.length > 0 ? `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3">Customer Reviews</h3>
+                        <div class="space-y-4">
+                            ${selectedProduct.reviews.map(review => `
+                                <div class="border-b pb-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                            </div>
+                                            <span class="font-medium">${review.user?.name || 'Anonymous'}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-yellow-400 mr-1">${review.rating}</span>
+                                            <i class="fas fa-star text-yellow-400"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-600">${review.comment}</p>
+                                    <span class="text-sm text-gray-500">${new Date(review.createdAt).toLocaleDateString()}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
 
                 <!-- Action Buttons -->
                 <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg flex space-x-4">
@@ -810,6 +861,16 @@ function renderDelivery() {
     const deliveryFee = deliveryOption === 'express' ? 50 : 0;
     const finalTotal = total + deliveryFee;
 
+    // Get the product from cart (should be only one in case of Buy Now)
+    const cartItem = cart[0];
+    const product = cartItem?.product;
+
+    if (!product) {
+        navigate('home');
+        showToast('No product selected');
+        return;
+    }
+
     app.innerHTML = `
         <div class="min-h-screen pb-20">
             <!-- Header -->
@@ -845,6 +906,19 @@ function renderDelivery() {
                             <i class="fas fa-check"></i>
                         </div>
                         <span class="text-xs text-gray-500">Complete</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Summary -->
+            <div class="bg-white p-4 mb-4">
+                <h2 class="text-lg font-semibold mb-4">Order Summary</h2>
+                <div class="flex items-center space-x-4">
+                    <img src="${product.image}" alt="${product.name}" class="w-20 h-20 object-contain">
+                    <div>
+                        <h3 class="font-medium">${product.name}</h3>
+                        <p class="text-gray-500">Quantity: ${cartItem.quantity}</p>
+                        <p class="text-green-600 font-semibold">₹${product.price}</p>
                     </div>
                 </div>
             </div>
@@ -1002,7 +1076,8 @@ function placeOrder() {
         state: document.getElementById('state').value,
         postalCode: document.getElementById('postalCode').value,
         deliveryOption: deliveryOption,
-        total: calculateSubtotal() + (deliveryOption === 'express' ? 50 : 0)
+        total: calculateSubtotal() + (deliveryOption === 'express' ? 50 : 0),
+        items: cart // Include cart items in order details
     };
 
     // Store order details if needed
@@ -1018,10 +1093,13 @@ function placeOrder() {
     cart = [];
     saveCart();
     
-    // After 2 seconds, redirect to home
+    // After 3 seconds, redirect to home
     setTimeout(() => {
+        if (successModal) {
+            successModal.classList.add('hidden');
+        }
         navigate('home');
-    }, 2000);
+    }, 3000);
 }
 
 function renderSearch() {
@@ -1377,14 +1455,31 @@ function showToast(message) {
 }
 
 function buyNow(productId) {
-    addToCart(productId);
-    navigate('cart');
+    const product = products.find(p => p._id === productId);
+    if (!product) {
+        showToast('Product not found');
+        return;
+    }
+
+    // Clear existing cart and add only this product
+    cart = [];
+    cart.push({
+        id: productId,
+        quantity: 1,
+        product: product
+    });
+    
+    saveCart();
+    navigate('delivery');
 }
 
 // Cart Functions
 function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
+    const product = products.find(p => p._id === productId);
+    if (!product) {
+        showToast('Product not found');
+        return;
+    }
 
     const existingItem = cart.find(item => item.id === productId);
     if (existingItem) {
@@ -1393,8 +1488,7 @@ function addToCart(productId) {
         cart.push({
             id: productId,
             quantity: 1,
-            color: selectedColor,
-            size: selectedSize
+            product: product
         });
     }
 
@@ -1563,186 +1657,134 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function showProductDetails(product) {
-    app.innerHTML = `
-        <div class="min-h-screen bg-gray-100">
-            <!-- Back Button Header -->
-            <div class="bg-white sticky top-0 z-10 shadow-sm">
-                <div class="flex items-center justify-between p-4">
-                    <button onclick="navigate('home')" class="text-gray-600 hover:text-gray-800">
-                        <i class="fas fa-arrow-left text-xl"></i>
-                    </button>
-                    <div class="flex items-center gap-4">
-                        <button onclick="toggleWishlist(${product.id})" class="relative">
-                            <i class="fas fa-heart ${wishlist.includes(product.id) ? 'text-red-500' : 'text-gray-400'} text-xl"></i>
-                        </button>
-                        <button onclick="navigate('cart')" class="relative">
-                            <i class="fas fa-shopping-cart text-gray-600 text-xl"></i>
-                            ${cart.length > 0 ? `<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>` : ''}
-                        </button>
-                    </div>
-                </div>
-            </div>
+    selectedProduct = product;
+    
+    // Function to render dynamic specifications
+    const renderSpecifications = (specs) => {
+        if (!specs) return '';
+        return Object.entries(specs).map(([key, value]) => `
+            <li class="flex items-center gap-2">
+                <i class="fas fa-check text-green-500"></i>
+                <span class="font-medium">${key}:</span> ${value}
+            </li>
+        `).join('');
+    };
 
-            <!-- Product Images Section -->
-            <div id="productTop" class="bg-white">
-                <div class="relative aspect-square max-h-[500px]">
+    // Function to render additional information
+    const renderAdditionalInfo = (info) => {
+        if (!info) return '';
+        return Object.entries(info).map(([key, value]) => `
+            <div class="mb-3">
+                <span class="font-medium">${key.replace(/_/g, ' ')}:</span>
+                <span class="text-gray-600">${value}</span>
+            </div>
+        `).join('');
+    };
+
+    app.innerHTML = `
+        <div class="pb-20">
+            <!-- Product Image -->
+            <div class="relative">
+                <button onclick="navigate('home')" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center z-10">
+                    <i class="fas fa-arrow-left text-gray-600"></i>
+                </button>
+                <div class="w-full h-[300px] bg-white relative">
                     <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain">
-                    <button onclick="toggleWishlist(${product.id})" 
+                    <button onclick="toggleWishlist('${product._id}')" 
                             class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center">
-                        <i class="fas fa-heart ${wishlist.includes(product.id) ? 'text-red-500' : 'text-gray-300'} text-xl"></i>
+                        <i class="fas fa-heart ${wishlist.includes(product._id) ? 'text-red-500' : 'text-gray-300'} text-xl"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Product Info -->
-            <div class="bg-white mt-2 p-4">
-                <h1 class="text-2xl font-bold text-gray-800">${product.name}</h1>
-                
-                <!-- Rating and Reviews -->
-                <div class="flex items-center gap-4 mt-2">
-                    <div class="flex items-center gap-1">
-                        <span class="text-3xl font-bold">${product.rating}</span>
+            <div class="bg-white p-4 mb-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-2">${product.name}</h2>
                         <div class="flex items-center">
-                            ${Array(5).fill('').map((_, i) => `
-                                <i class="fas fa-star ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}"></i>
-                            `).join('')}
+                            <div class="flex items-center mr-4">
+                                <span class="text-xl font-bold mr-2">${product.rating || 0}</span>
+                                <i class="fas fa-star text-yellow-400"></i>
+                            </div>
+                            <span class="text-gray-500">${product.reviews ? product.reviews.length : 0} reviews</span>
                         </div>
+                        ${product.stock ? `
+                            <div class="mt-2">
+                                <span class="text-${product.stock > 0 ? 'green' : 'red'}-500">
+                                    ${product.stock > 0 ? `In Stock (${product.stock} units)` : 'Out of Stock'}
+                                </span>
+                            </div>
+                        ` : ''}
                     </div>
-                    <div class="text-gray-600">
-                        <span class="font-semibold">${product.reviews.length}</span> Reviews
-                    </div>
+                    <div class="text-3xl font-bold text-green-500">₹${product.price}</div>
                 </div>
 
-                <!-- Price Section -->
-                <div class="mt-4">
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-bold text-gray-900">₹${product.price}</span>
-                        <span class="text-lg text-gray-500 line-through">₹${Math.round(product.price * 1.2)}</span>
-                        <span class="text-green-600 font-semibold">20% off</span>
-                    </div>
-                    <p class="text-green-600 text-sm mt-1">✓ In stock (${product.stock} units)</p>
+                <!-- Product Description -->
+                <div class="mb-6">
+                    <p class="text-gray-600">${product.description}</p>
                 </div>
 
-                <!-- Delivery Info -->
-                <div class="mt-4 bg-gray-50 p-4 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-truck text-gray-600"></i>
-                        <div>
-                            <p class="font-medium">Free Delivery</p>
-                            <p class="text-sm text-gray-600">Estimated delivery by ${new Date(Date.now() + 4*24*60*60*1000).toLocaleDateString()}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Color Selection -->
-                ${product.colors ? `
-                    <div class="mt-6">
-                        <h3 class="text-lg font-medium mb-3">Select Color</h3>
-                        <div class="flex flex-wrap gap-3">
-                            ${product.colors.map(color => `
-                                <button onclick="selectColor('${color}')" 
-                                        class="w-12 h-12 rounded-full border-2 flex items-center justify-center 
-                                        ${selectedColor === color ? 'border-blue-500' : 'border-gray-300'}">
-                                    <span class="w-8 h-8 rounded-full" style="background-color: ${color.toLowerCase()}"></span>
-                                </button>
-                            `).join('')}
-                        </div>
+                <!-- Dynamic Specifications -->
+                ${product.specifications ? `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3">Specifications</h3>
+                        <ul class="space-y-2">
+                            ${renderSpecifications(product.specifications)}
+                        </ul>
                     </div>
                 ` : ''}
 
-                <!-- Size Selection -->
-                ${product.sizes ? `
-                    <div class="mt-6">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-lg font-medium">Select Size</h3>
-                            <button class="text-blue-600 text-sm">Size Guide</button>
-                        </div>
-                        <div class="flex flex-wrap gap-3">
-                            ${product.sizes.map(size => `
-                                <button onclick="selectSize('${size}')"
-                                        class="w-14 h-14 rounded-lg border-2 flex items-center justify-center
-                                        ${selectedSize === size ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}">
-                                    ${size}
-                                </button>
+                <!-- Additional Information -->
+                ${product.additionalInfo ? `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3">Additional Information</h3>
+                        ${renderAdditionalInfo(product.additionalInfo)}
+                    </div>
+                ` : ''}
+
+                <!-- Reviews Section -->
+                ${product.reviews && product.reviews.length > 0 ? `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3">Customer Reviews</h3>
+                        <div class="space-y-4">
+                            ${product.reviews.map(review => `
+                                <div class="border-b pb-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                            </div>
+                                            <span class="font-medium">${review.user?.name || 'Anonymous'}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-yellow-400 mr-1">${review.rating}</span>
+                                            <i class="fas fa-star text-yellow-400"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-600">${review.comment}</p>
+                                    <span class="text-sm text-gray-500">${new Date(review.createdAt).toLocaleDateString()}</span>
+                                </div>
                             `).join('')}
                         </div>
                     </div>
                 ` : ''}
 
                 <!-- Action Buttons -->
-                <div class="flex gap-4 mt-6">
-                    <button onclick="addToCart(${product.id})" 
-                            class="flex-1 bg-blue-600 text-white py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg flex space-x-4">
+                    <button onclick="addToCart('${product._id}')" 
+                            class="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold flex items-center justify-center"
+                            ${product.stock <= 0 ? 'disabled' : ''}>
+                        <i class="fas fa-cart-plus mr-2"></i>
                         Add to Cart
                     </button>
-                    <button onclick="buyNow(${product.id})"
-                            class="flex-1 bg-green-600 text-white py-4 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                        Buy Now
+                    <button onclick="buyNow('${product._id}')"
+                            class="flex-1 bg-black text-white py-3 rounded-lg font-semibold"
+                            ${product.stock <= 0 ? 'disabled' : ''}>
+                        Book Now
                     </button>
-                </div>
-
-                <!-- Product Details -->
-                <div class="mt-8">
-                    <h3 class="text-xl font-bold mb-4">Product Details</h3>
-                    <div class="prose max-w-none">
-                        <p class="text-gray-600 leading-relaxed">${product.description}</p>
-                        
-                        <!-- Specifications -->
-                        <div class="mt-6">
-                            <h4 class="font-semibold mb-3">Specifications</h4>
-                            <ul class="space-y-2">
-                                ${product.specs.map(spec => `
-                                    <li class="flex items-center gap-2">
-                                        <i class="fas fa-check text-green-500"></i>
-                                        <span>${spec}</span>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Reviews Section -->
-                <div class="mt-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold">Customer Reviews</h3>
-                        <button class="text-blue-600">Write a Review</button>
-                    </div>
-                    
-                    <!-- Review List -->
-                    <div class="space-y-4">
-                        ${product.reviews.map(review => `
-                            <div class="border-b pb-4">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-user text-gray-500"></i>
-                                        </div>
-                                        <span class="font-medium">${review.user}</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        ${Array(5).fill('').map((_, i) => `
-                                            <i class="fas fa-star ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}"></i>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                                <p class="text-gray-600">${review.comment}</p>
-                            </div>
-                        `).join('')}
-                    </div>
                 </div>
             </div>
         </div>
     `;
-
-    // Scroll to top
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
-
-    document.getElementById('productTop').scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-    });
 }
