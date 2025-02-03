@@ -1,0 +1,235 @@
+/* Add these styles for the image slider */
+.product-image-slider {
+    position: relative;
+}
+
+.main-image-container {
+    position: relative;
+    background: #f8f9fa;
+    padding: 1rem;
+}
+
+.thumbnail-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.thumbnail-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.thumbnail-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.thumbnail-container::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.thumbnail-image {
+    transition: all 0.3s ease;
+}
+
+.thumbnail-image:hover {
+    transform: scale(1.05);
+}
+
+/* Base responsive styles */
+:root {
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile-first responsive styles */
+.container {
+    width: 100%;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 100%;
+}
+
+/* Product grid responsiveness */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.5rem;
+        padding: 1rem;
+    }
+}
+
+/* Product card responsive styles */
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+}
+
+.product-card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+/* Bottom navigation adjustments */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding-bottom: calc(0.5rem + var(--safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 50;
+}
+
+/* Product detail page responsiveness */
+.product-detail {
+    padding-bottom: calc(80px + var(--safe-area-inset-bottom));
+}
+
+.product-image-slider {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.125rem; }
+    .product-title { font-size: 1rem; }
+    .product-price { font-size: 1.125rem; }
+}
+
+/* Touch-friendly buttons and inputs */
+button, 
+.btn,
+input,
+select {
+    min-height: 44px; /* Minimum touch target size */
+    padding: 0.5rem 1rem;
+}
+
+/* Improved scrolling */
+.scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Modal responsiveness */
+.modal-content {
+    width: 90%;
+    max-height: 90vh;
+    margin: 5vh auto;
+    overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+    .modal-content {
+        width: 95%;
+        margin: 2.5vh auto;
+    }
+}
+
+/* Category and filter improvements */
+.filters-scroll {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem;
+    margin: 0 -0.5rem;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+/* Image gallery responsiveness */
+.thumbnail-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .thumbnail-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 0.75rem;
+    }
+}
+
+/* Cart and checkout improvements */
+.cart-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+@media (min-width: 640px) {
+    .cart-item {
+        grid-template-columns: 100px 1fr auto;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+}
+
+/* Search improvements */
+.search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 0.75rem;
+    background: white;
+}
+
+/* Loading states */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(0,0,0,0.06) 25%,
+        rgba(0,0,0,0.15) 37%,
+        rgba(0,0,0,0.06) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.4s ease infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+/* Safe area handling for notched devices */
+.safe-area-padding {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+} 
